@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  ollama:
+    image: ollama/ollama:latest   # Exemple, remplace par la vraie image
+    container_name: ollama_backend
+    ports:
+      - "11434:11434"             # Expose le port API localement
+    volumes:
+      - ./models:/models          # Si besoin de monter des modèles
+    restart: unless-stopped
+

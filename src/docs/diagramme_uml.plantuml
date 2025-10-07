@@ -1,0 +1,47 @@
+@startuml
+package "src.main" {
+
+  class App {
+    +main(String[] args)
+  }
+
+  package agent {
+    class ChatAgent {
+      -Memory memory
+      -OllamaClient ollamaClient
+      +sendPrompt(String prompt): String
+      +setPersonality(String personality): void
+    }
+
+    class Memory {
+      -contextData : Map<String, String>
+      +addContext(String key, String value): void
+      +getContext(): Map<String, String>
+      +clear(): void
+    }
+  }
+
+  package api {
+    class OllamaClient {
+      +sendRequest(String prompt): String
+    }
+  }
+
+  package ui {
+    class ConsoleUI {
+      -ChatAgent agent
+      +start(): void
+      +displayResponse(String response): void
+      +getUserInput(): String
+    }
+  }
+
+  ' Relations
+  App --> ConsoleUI : uses
+  ConsoleUI --> ChatAgent : interacts with
+  ChatAgent --> Memory : uses
+  ChatAgent --> OllamaClient : calls
+
+}
+
+@enduml
