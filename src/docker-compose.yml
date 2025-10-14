@@ -37,7 +37,7 @@ services:
         ollama pull mistral &&
         echo "Smoke test..." &&
         ollama run mistral "ping" >/dev/null &&
-        echo "Init OK"
+        echo "Init OK" 
       '
 
   #app:
