@@ -1,10 +1,57 @@
 services:
   ollama:
-    image: ollama/ollama:latest   # Exemple, remplace par la vraie image
-    container_name: ollama_backend
-    ports:
-      - "11434:11434"             # Expose le port API localement
-    volumes:
-      - ./models:/models          # Si besoin de monter des modèles
+    image: ollama/ollama:0.12.5
+    container_name: ollama
     restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      # fait écouter le daemon sur toutes les interfaces du conteneur
+      - OLLAMA_HOST=0.0.0.0:11434
+    command: ["serve"]
+    healthcheck:
+      # pas de curl nécessaire, on utilise le client intégré
+      test: ["CMD-SHELL", "ollama ps >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 30s
+
+  ollama-init:
+    image: ollama/ollama:0.12.5
+    container_name: ollama-init
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      # très important : pointer vers le service 'ollama'
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: [ "sh","-lc" ]
+    command: >
+      '
+        set -e
+        echo "Pull mistral..." &&
+        ollama pull mistral &&
+        echo "Smoke test..." &&
+        ollama run mistral "ping" >/dev/null &&
+        echo "Init OK" 
+      '
+
+  #app:
+  #  build: .
+  #  container_name: app-java
+  #  depends_on:
+  #    ollama:
+  #      condition: service_healthy
+  #  volumes:
+  #    - ./:/app
+  #  working_dir: /app
+
+  # ON VERRA SI FAUT MODIFIER PLUS TARD
+
+volumes:
+  ollama_data:
 
