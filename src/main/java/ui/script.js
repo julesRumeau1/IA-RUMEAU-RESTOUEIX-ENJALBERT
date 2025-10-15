@@ -1,5 +1,4 @@
 const THEMES = [
-  { key: 'a_la_une', label: 'À la une', rss: 'https://www.lemonde.fr/rss/une.xml' },
   { key: 'politique', label: 'Politique', rss: 'https://www.lemonde.fr/politique/rss_full.xml' },
   { key: 'international', label: 'International', rss: 'https://www.lemonde.fr/international/rss_full.xml' },
   { key: 'economie', label: 'Économie', rss: 'https://www.lemonde.fr/economie/rss_full.xml' },
@@ -11,8 +10,7 @@ const THEMES = [
   { key: 'technologies', label: 'Tech', rss: 'https://www.lemonde.fr/pixels/rss_full.xml' },
   { key: 'sante', label: 'Santé', rss: 'https://www.lemonde.fr/sante/rss_full.xml' },
   { key: 'education', label: 'Éducation', rss: 'https://www.lemonde.fr/education/rss_full.xml' },
-  { key: 'idees', label: 'Idées', rss: 'https://www.lemonde.fr/idees/rss_full.xml' },
-  { key: 'm_afrique', label: 'Afrique', rss: 'https://www.lemonde.fr/afrique/rss_full.xml' }
+  { key: 'idees', label: 'Idées', rss: 'https://www.lemonde.fr/idees/rss_full.xml' }
 ];
 
 const grid = document.getElementById('grid');
@@ -69,15 +67,14 @@ function updateTrack(range, fill){
   fill.style.width = pct + '%';
 }
 
-function getPayload(){
-  const weights = {};
-  const feeds = {};
+// NEW: construire un payload typé { ts, themes: { sciences: {level, rss}, ... } }
+function getPayloadTyped(){
+  const themes = {};
   for(const card of grid.children){
     const k = card._theme.key;
-    weights[k] = Number(card._range.value);
-    feeds[k] = card._theme.rss;
+    themes[k] = { level: Number(card._range.value), rss: card._theme.rss };
   }
-  return { weights, feeds, ts: new Date().toISOString() };
+  return { ts: new Date().toISOString(), themes };
 }
 
 // Build grid
@@ -99,63 +96,46 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   [...grid.children].forEach(card => { card._range.value = 3; card._chip.textContent = '3'; updateTrack(card._range, card._fill); });
 });
 
-document.getElementById('randomBtn').addEventListener('click', () => {
-  [...grid.children].forEach(card => { const v = Math.floor(Math.random()*5)+1; card._range.value = v; card._chip.textContent = String(v); updateTrack(card._range, card._fill); });
+document.getElementById('clearBtn').addEventListener('click', () => {
+  [...grid.children].forEach(card => { card._range.value = 1; card._chip.textContent = '1'; updateTrack(card._range, card._fill); });
 });
 
 const out = document.getElementById('out');
 
 document.getElementById('copyJson').addEventListener('click', async () => {
-  const payload = getPayload();
+  const payload = getPayloadTyped();
   const json = JSON.stringify(payload, null, 2);
-  try{
-    await navigator.clipboard.writeText(json);
-    toast('JSON copié dans le presse‑papiers');
-  }catch{
-    toast('Impossible de copier automatiquement. Le JSON est affiché ci‑dessous.');
-    out.textContent = json;
-  }
+  try{ await navigator.clipboard.writeText(json); toast('JSON copié dans le presse‑papiers'); }
+  catch{ toast('Impossible de copier automatiquement. Le JSON est affiché ci‑dessous.'); out.textContent = json; }
 });
 
 document.getElementById('previewBtn').addEventListener('click', () => {
-  const payload = getPayload();
+  const payload = getPayloadTyped();
   const body = document.getElementById('modalBody');
   body.innerHTML = '';
   const list = document.createElement('div');
-  list.style.display = 'grid';
-  list.style.gridTemplateColumns = '1fr auto';
-  list.style.gap = '8px 12px';
-  Object.entries(payload.weights).forEach(([k,v])=>{
+  list.style.display = 'grid'; list.style.gridTemplateColumns = '1fr auto'; list.style.gap = '8px 12px';
+  Object.entries(payload.themes).forEach(([k,v])=>{
     const label = THEMES.find(t=>t.key===k)?.label ?? k;
     const l = document.createElement('div'); l.textContent = label;
-    const r = document.createElement('div'); r.textContent = v; r.style.textAlign='right'; r.style.opacity=.8;
+    const r = document.createElement('div'); r.textContent = v.level; r.style.textAlign='right'; r.style.opacity=.8;
     list.append(l,r);
   });
   body.appendChild(list);
   document.getElementById('modal').showModal();
 });
 
-// Fetch button — placeholder AJAX
+// Fetch button — envoi vers l'API locale Javalin
 document.getElementById('fetchBtn').addEventListener('click', async () => {
-  const payload = getPayload();
+  const payload = getPayloadTyped();
   out.textContent = 'Envoi…';
   try{
-    // 🔧 À brancher côté serveur : remplacez l’URL par votre endpoint
-    const res = await fetch('/api/fetch-news', {
+    const res = await fetch('http://localhost:8080/api/preferences', {
       method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
     });
-    if(res.ok){
-      toast('Préférences envoyées. Traitement des flux en cours côté serveur.');
-      out.textContent = '';
-    }else{
-      toast('Requête envoyée, mais le serveur a répondu avec une erreur.');
-      out.textContent = '';
-    }
-  }catch(err){
-    console.error(err);
-    toast('Impossible de contacter le serveur (mode démo).');
-    out.textContent = '';
-  }
+    if(res.ok){ toast('Préférences envoyées ✔'); out.textContent = ''; }
+    else { toast('Erreur côté serveur'); out.textContent = ''; }
+  }catch(err){ console.error(err); toast('Impossible de contacter l\'API locale'); out.textContent = ''; }
 });
 
 // Toast helper
