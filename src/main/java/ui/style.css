@@ -4,8 +4,8 @@
   --card: #161b22;
   --text: #e5e7eb;
   --muted: #9aa4b2;
-  --brand: #4f9cff; /* bleu sobre */
-  --brand-2: #34d399; /* vert accent */
+  --brand: #4f9cff;
+  --brand-2: #34d399;
   --danger: #ef4444;
   --radius-xl: 18px;
   --radius: 12px;
@@ -38,7 +38,10 @@ header{position:sticky; top:0; z-index:10; backdrop-filter: blur(10px); backgrou
 .btn:active{transform: translateY(0)}
 .btn.secondary{--b: #30363d; color: var(--text); background: #1f2937; border:1px solid rgba(255,255,255,.08); box-shadow: var(--shadow-sm)}
 
-.grid{display:grid; gap:16px; margin-top:22px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))}
+/* GRID — 3 cartes par ligne avec espaces confortables */
+.grid{display:grid; gap:24px; margin-top:22px; grid-template-columns: repeat(1, minmax(0,1fr))}
+@media (min-width: 720px){ .grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (min-width: 1024px){ .grid{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
 
 .card{position:relative; background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.06); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); padding:18px 16px; overflow:hidden; transform: translateZ(0); transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease}
 .card::after{content:""; position:absolute; inset:-1px; border-radius: inherit; pointer-events:none; background: radial-gradient(120px 60px at 10% 0%, rgba(255,255,255,.08), transparent 55%); mask: linear-gradient(#000, transparent)}
