@@ -72,7 +72,6 @@ public class LeMondeRSSFetcher {
                 sb.append(line).append("\n");
             }
         }
-
         return sb.toString();
     }
 }
