@@ -128,14 +128,41 @@ document.getElementById('previewBtn').addEventListener('click', () => {
 // Fetch button — envoi vers l'API locale Javalin
 document.getElementById('fetchBtn').addEventListener('click', async () => {
   const payload = getPayloadTyped();
-  out.textContent = 'Envoi…';
+  out.textContent = '';
+  showLoading('Analyse de vos préférences…');
+
+  // On tente l’appel réel, mais on garantit 5s d’attente (mock si pas de JSON)
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  let serverNews = null;
+
   try{
     const res = await fetch('http://localhost:8080/api/preferences', {
-      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
     });
-    if(res.ok){ toast('Préférences envoyées ✔'); out.textContent = ''; }
-    else { toast('Erreur côté serveur'); out.textContent = ''; }
-  }catch(err){ console.error(err); toast('Impossible de contacter l\'API locale'); out.textContent = ''; }
+    if(res.ok){
+      // si un jour ton API renvoie un vrai JSON [{title, summary, theme, tone}], on l’utilise
+      const maybeJson = await res.text();
+      if(maybeJson){
+        try { serverNews = JSON.parse(maybeJson); } catch {}
+      }
+    }else{
+      toast('Erreur côté serveur (mock des résultats affiché)');
+    }
+  }catch(e){
+    console.warn('Appel API échoué (mode mock)', e);
+    // on mock
+  }
+
+  // ⏳ Simule 5 secondes de traitement
+  await delay(5000);
+
+  const news = Array.isArray(serverNews) && serverNews.length ? serverNews
+               : buildMockNewsFromPayload(payload);
+
+  hideLoading();
+  openResults(news);
 });
 
 // Toast helper
@@ -145,4 +172,91 @@ function toast(msg){
   el.textContent = msg; el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=> el.classList.remove('show'), 2200);
+}
+
+function showLoading(text='Analyse en cours…'){
+  const el = document.getElementById('loading');
+  el.querySelector('.loading-text').textContent = text;
+  el.hidden = false;
+}
+function hideLoading(){
+  document.getElementById('loading').hidden = true;
+}
+
+function openResults(news){
+  const body = document.getElementById('resultsBody');
+  body.innerHTML = '';
+
+  const list = document.createElement('div');
+  list.className = 'news-list';
+
+  news.forEach(item => {
+    const card = document.createElement('article');
+    card.className = 'news-card';
+
+    const title = document.createElement('h3');
+    title.className = 'news-title';
+    title.textContent = item.title;
+
+    const meta = document.createElement('div');
+    meta.className = 'news-meta';
+
+    const theme = document.createElement('span');
+    theme.className = 'badge';
+    theme.textContent = item.themeLabel ?? item.theme;
+
+    const tone = document.createElement('span');
+    tone.className = 'badge tone ' + (item.tone || 'neutral'); // 'positive' | 'neutral' | 'negative'
+    tone.textContent = item.tone?.toUpperCase?.() || 'NEUTRE';
+
+    meta.append(theme, tone);
+
+    const summary = document.createElement('p');
+    summary.className = 'news-summary';
+    summary.textContent = item.summary;
+
+    card.append(title, meta, summary);
+    list.append(card);
+  });
+
+  body.appendChild(list);
+  document.getElementById('results').showModal();
+}
+
+function buildMockNewsFromPayload(payload){
+  // crée 6 à 10 articles en privilégiant les thèmes au level élevé
+  const entries = [];
+  const themesArray = Object.entries(payload.themes) // [key, {level, rss}]
+    .map(([k,v]) => {
+      const t = THEMES.find(x => x.key === k);
+      return { key:k, label:t?.label || k, level:v.level };
+    })
+    .sort((a,b)=> b.level - a.level);
+
+  const tones = ['positive','neutral','negative'];
+
+  const count = Math.max(6, Math.min(10, themesArray.length * 2));
+  for(let i=0; i<count; i++){
+    const pick = weightedPick(themesArray); // favorise level élevés
+    const tone = tones[Math.floor(Math.random()*tones.length)];
+
+    entries.push({
+      theme: pick.key,
+      themeLabel: pick.label,
+      title: `(${pick.label}) Titre d’article fictif ${i+1}`,
+      summary: `Ceci est un résumé simulé, généré pour illustrer l’aperçu des résultats en fonction du poids attribué à « ${pick.label} ». Le vrai backend renverra ici un résumé concis.`,
+      tone
+    });
+  }
+  return entries;
+}
+
+function weightedPick(arr){
+  // poids = level (1..5)
+  const total = arr.reduce((s,a)=> s + a.level, 0) || 1;
+  let r = Math.random() * total;
+  for(const a of arr){
+    if((r -= a.level) <= 0) return a;
+  }
+  return arr[arr.length-1];
 }

@@ -7,6 +7,25 @@
     <meta name="description" content="Choisissez vos thèmes d’actualités préférés et leur importance via des curseurs, puis récupérez les dernières actualités.">
     <link rel="stylesheet" href="style.css">
 </head>
+<!-- Fenêtre résultats -->
+<dialog id="results" class="modal modal-results">
+    <div class="modal-header">
+        <strong>Résultats — Articles recommandés</strong>
+        <form method="dialog"><button class="btn secondary">Fermer</button></form>
+    </div>
+    <div id="resultsBody" class="modal-body">
+        <!-- Articles insérés en JS -->
+    </div>
+</dialog>
+
+<!-- Overlay de chargement -->
+<div id="loading" class="loading" aria-live="polite" hidden>
+    <div class="loading-box">
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="loading-text">Analyse de vos préférences…</div>
+    </div>
+</div>
+
 <body>
 <div class="page">
     <header>
