@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vos préférences d’actualités · Le Monde</title>
+    <meta name="description" content="Choisissez vos thèmes d’actualités préférés et leur importance via des curseurs, puis récupérez les dernières actualités.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+    <header>
+        <div class="container hero">
+            <div>
+                <h1 class="title">Ajustez vos thèmes d’actualités</h1>
+                <p class="subtitle">Glissez les curseurs de 1 (peu d’intérêt) à 5 (très important). Nous utiliserons vos préférences pour pondérer les flux RSS <em>Le Monde</em> (à la une, politique, sport, etc.).</p>
+                <div class="toolbar">
+                    <button class="btn secondary" id="resetBtn" aria-label="Réinitialiser à 3">Réinitialiser</button>
+                    <button class="btn secondary" id="randomBtn" aria-label="Affecter aléatoirement">Aléatoire</button>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn" id="fetchBtn" aria-label="Récupérer les actualités maintenant">⚡ Récupérer les actualités</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="grid" class="grid" aria-label="Grille des thèmes">
+            <!-- Cartes générées par JS -->
+        </section>
+
+        <div class="toolbar" style="margin-top:22px">
+            <button class="btn" id="copyJson">Copier le JSON</button>
+            <button class="btn secondary" id="previewBtn">Aperçu de la pondération</button>
+        </div>
+
+        <output id="out" class="subtitle" style="display:block; margin-top:12px"></output>
+
+        <dialog id="modal" class="modal">
+            <div class="modal-header">
+                <strong>Vos pondérations</strong>
+                <form method="dialog"><button class="btn secondary">Fermer</button></form>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+        </dialog>
+    </main>
+
+    <footer>
+        <div class="container">
+            Source des flux : <a href="https://www.lemonde.fr/le-monde-et-vous/article/2025/07/14/les-flux-rss-du-monde-fr_5498778_3237.html" target="_blank" rel="noopener noreferrer" class="link">Le Monde – Liste des flux RSS</a>
+        </div>
+    </footer>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="script.js" defer></script>
+</body>
+</html>
