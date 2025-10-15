@@ -7,15 +7,13 @@ public class News {
     private String title;
     private String link;
     private String description;
-    private String htmlContent;
 
     private List<NewsCategoryScore> categoryScores;
 
-    public News(String title, String link, String description, String htmlContent) {
+    public News(String title, String link, String description) {
         this.title = title;
         this.link = link;
         this.description = description;
-        this.htmlContent = htmlContent;
 
         this.categoryScores = computeScores(); // tu peux faire une vraie logique IA plus tard
     }
@@ -27,7 +25,6 @@ public class News {
         int politiqueScore = 0;
         if (title.toLowerCase().contains("politique")) politiqueScore += 2;
         if (description.toLowerCase().contains("gouvernement")) politiqueScore += 1;
-        if (htmlContent.toLowerCase().contains("élection")) politiqueScore += 1;
 
         scores.add(new NewsCategoryScore("Politique", Math.min(politiqueScore, 4)));
 
