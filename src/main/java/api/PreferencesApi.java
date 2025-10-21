@@ -9,9 +9,14 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import model.News;
+import model.NewsCollection;
 import org.eclipse.jetty.http.HttpMethod;
+import rss.LeMondeRSSFetcher;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Mini API locale avec une seule route POST qui reçoit les préférences utilisateur.
@@ -69,18 +74,38 @@ public class PreferencesApi {
         ctx.header("Vary", "Origin");
     }
 
+    private static NewsCollection initNewsCollection() {
+        NewsCollection newsCollection = new NewsCollection();
+        List<Map<String, String>> rawNews = LeMondeRSSFetcher.fetchRawNews();
+
+        for (Map<String, String> newsData : rawNews) {
+            // Créer un objet News à partir des données brutes
+            String title = newsData.get("title");
+            String link = newsData.get("link");
+            String description = newsData.get("description");
+
+            News news = new News(title, link, description);
+
+            // Ajouter la news dans la collection
+            newsCollection.add(news);
+        }
+
+        return newsCollection;
+    }
+
     private static void handlePreferences(Context ctx) {
         try {
+            NewsCollection newsCollection = initNewsCollection();
+
             PreferencesRequest req = MAPPER.readValue(ctx.body(), PreferencesRequest.class);
 
-            // Exemple d'accès demandé : objet.sciences.getLevel()
-            Integer sciencesLevel = req.getThemes().getSciences().getLevel();
-            System.out.println("[Preferences] sciences.level=" + sciencesLevel + ", ts=" + req.getTs());
+
+            // Integer sciencesLevel = req.getThemes().getSciences().getLevel();
 
             // TODO: brancher ici votre pipeline RSS + scoring IA
-
             ctx.status(HttpStatus.OK)
-                    .json(new Ack("received", req.getTs()));
+                    .json(newsCollection);
+
         } catch (JsonProcessingException e) {
             ctx.status(HttpStatus.BAD_REQUEST)
                     .json(new Error("invalid_json", e.getOriginalMessage()));
