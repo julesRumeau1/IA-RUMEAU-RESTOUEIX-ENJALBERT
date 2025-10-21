@@ -100,12 +100,7 @@ public class PreferencesApi {
             PreferencesRequest req = MAPPER.readValue(ctx.body(), PreferencesRequest.class);
 
 
-
-            // Exemple d'accès demandé : objet.sciences.getLevel()
             // Integer sciencesLevel = req.getThemes().getSciences().getLevel();
-
-
-            // System.out.println("[Preferences] sciences.level=" + sciencesLevel + ", ts=" + req.getTs());
 
             // TODO: brancher ici votre pipeline RSS + scoring IA
             ctx.status(HttpStatus.OK)

@@ -24,7 +24,7 @@ public class NewsCollection {
         newsCollection.addAll(news);
     }
 
-    public List<News> getAll() {
+    public List<News> getNewsCollection() {
         return newsCollection;
     }
 
@@ -51,14 +51,7 @@ public class NewsCollection {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (News news : newsCollection) {
-            sb.append(news).append("\n");
-        }
-        return sb.toString();
+        return newsCollection.toString();
     }
 
-    public List<News> getNewsCollection() {
-        return newsCollection;
-    }
 }

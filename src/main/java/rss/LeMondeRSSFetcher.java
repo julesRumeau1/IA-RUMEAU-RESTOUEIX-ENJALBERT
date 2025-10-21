@@ -53,9 +53,19 @@ public class LeMondeRSSFetcher {
         String closeTag = "</" + tag + ">";
         int start = text.indexOf(openTag);
         int end = text.indexOf(closeTag);
+
         if (start == -1 || end == -1 || end <= start) return "";
-        return text.substring(start + openTag.length(), end).trim();
+
+        String content = text.substring(start + openTag.length(), end).trim();
+
+        // Supprimer les balises CDATA si présentes
+        if (content.startsWith("<![CDATA[") && content.endsWith("]]>")) {
+            content = content.substring(9, content.length() - 3); // 9 = "<![CDATA[".length()
+        }
+
+        return content.trim();
     }
+
 
     // Méthode simple pour récupérer un contenu texte depuis une URL
     private static String fetchTextFromUrl(String urlString) throws IOException {
