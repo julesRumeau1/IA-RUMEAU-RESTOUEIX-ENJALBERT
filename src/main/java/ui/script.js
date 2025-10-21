@@ -239,37 +239,50 @@ function openResults(news){
   document.getElementById('results').showModal();
 }
 
+function getNewsCategoryScoreCollectionPayload() {
+  const scores = [];
+
+  for (const card of grid.children) {
+    const category = card._theme.key;
+    const score = Number(card._range.value);
+
+    scores.push({ category, score });
+  }
+
+  return { scores };
+}
+
+
 // ==================== Appel API (réel, sans mock) ====================
 document.getElementById('fetchBtn').addEventListener('click', async () => {
-  const payload = getPayloadTyped();
+  const payload = getNewsCategoryScoreCollectionPayload();
   out.textContent = '';
   showLoading('Analyse de vos préférences…');
 
-  try{
+  try {
     const res = await fetch('http://localhost:8080/api/preferences', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    if(!res.ok){
+    if (!res.ok) {
       hideLoading();
       toast('Erreur côté serveur');
       return;
     }
 
-    // On attend un JSON { newsCollection: [...] }
     const data = await res.json();
     const news = normalizeNews(data);
 
     hideLoading();
-    if(!news.length){
+    if (!news.length) {
       toast('Pas d’articles trouvés pour ces préférences');
       return;
     }
     openResults(news);
 
-  } catch (e){
+  } catch (e) {
     console.error(e);
     hideLoading();
     toast('Impossible de contacter l’API locale');
