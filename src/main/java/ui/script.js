@@ -1,3 +1,4 @@
+// ==================== Config UI ====================
 const THEMES = [
   { key: 'politique', label: 'Politique', rss: 'https://www.lemonde.fr/politique/rss_full.xml' },
   { key: 'international', label: 'International', rss: 'https://www.lemonde.fr/international/rss_full.xml' },
@@ -15,6 +16,7 @@ const THEMES = [
 
 const grid = document.getElementById('grid');
 
+// ==================== Cartes thèmes ====================
 function createCard(theme){
   const card = document.createElement('article');
   card.className = 'card fade-in';
@@ -67,7 +69,7 @@ function updateTrack(range, fill){
   fill.style.width = pct + '%';
 }
 
-// NEW: construire un payload typé { ts, themes: { sciences: {level, rss}, ... } }
+// NEW: payload typé { ts, themes: { sciences: {level, rss}, ... } }
 function getPayloadTyped(){
   const themes = {};
   for(const card of grid.children){
@@ -105,8 +107,8 @@ const out = document.getElementById('out');
 document.getElementById('copyJson').addEventListener('click', async () => {
   const payload = getPayloadTyped();
   const json = JSON.stringify(payload, null, 2);
-  try{ await navigator.clipboard.writeText(json); toast('JSON copié dans le presse‑papiers'); }
-  catch{ toast('Impossible de copier automatiquement. Le JSON est affiché ci‑dessous.'); out.textContent = json; }
+  try{ await navigator.clipboard.writeText(json); toast('JSON copié dans le presse-papiers'); }
+  catch{ toast('Impossible de copier automatiquement. Le JSON est affiché ci-dessous.'); out.textContent = json; }
 });
 
 document.getElementById('previewBtn').addEventListener('click', () => {
@@ -125,47 +127,7 @@ document.getElementById('previewBtn').addEventListener('click', () => {
   document.getElementById('modal').showModal();
 });
 
-// Fetch button — envoi vers l'API locale Javalin
-document.getElementById('fetchBtn').addEventListener('click', async () => {
-  const payload = getPayloadTyped();
-  out.textContent = '';
-  showLoading('Analyse de vos préférences…');
-
-  // On tente l’appel réel, mais on garantit 5s d’attente (mock si pas de JSON)
-  const delay = ms => new Promise(r => setTimeout(r, ms));
-  let serverNews = null;
-
-  try{
-    const res = await fetch('http://localhost:8080/api/preferences', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    if(res.ok){
-      // si un jour ton API renvoie un vrai JSON [{title, summary, theme, tone}], on l’utilise
-      const maybeJson = await res.text();
-      if(maybeJson){
-        try { serverNews = JSON.parse(maybeJson); } catch {}
-      }
-    }else{
-      toast('Erreur côté serveur (mock des résultats affiché)');
-    }
-  }catch(e){
-    console.warn('Appel API échoué (mode mock)', e);
-    // on mock
-  }
-
-  // ⏳ Simule 5 secondes de traitement
-  await delay(5000);
-
-  const news = Array.isArray(serverNews) && serverNews.length ? serverNews
-               : buildMockNewsFromPayload(payload);
-
-  hideLoading();
-  openResults(news);
-});
-
-// Toast helper
+// ==================== Loader + Toast ====================
 let toastTimer = null;
 function toast(msg){
   const el = document.getElementById('toast');
@@ -173,7 +135,6 @@ function toast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=> el.classList.remove('show'), 2200);
 }
-
 function showLoading(text='Analyse en cours…'){
   const el = document.getElementById('loading');
   el.querySelector('.loading-text').textContent = text;
@@ -183,6 +144,52 @@ function hideLoading(){
   document.getElementById('loading').hidden = true;
 }
 
+// ==================== Normalisation des données backend ====================
+// On attend un objet { newsCollection: [{ title, link, description, categoryScores: [{category, score}] }, ...] }
+function normalizeNews(apiData){
+  const raw = apiData?.newsCollection ?? [];
+  return raw.map(item => {
+    const title = item.title || 'Article';
+    const link = item.link || '#';
+    const summary = item.description || '';
+
+    const themeLabel = pickThemeLabel(item.categoryScores);
+    const tone = pickTone(item.categoryScores); // 'positive' | 'negative' | 'neutral'
+
+    return { title, link, summary, themeLabel, tone };
+  });
+}
+
+// Choisit un thème lisible à partir des catégories (on ignore Positif/Négatif/Neutre)
+const NON_THEME_LABELS = new Set(['positif','négatif','negatif','neutre','neutral','positive','negative']);
+function pickThemeLabel(categoryScores){
+  if(!Array.isArray(categoryScores) || !categoryScores.length) return 'Général';
+  // prend la catégorie avec le meilleur score, hors sentiment
+  const filtered = categoryScores
+    .filter(c => !NON_THEME_LABELS.has((c.category || '').toLowerCase()))
+    .sort((a,b) => (b.score||0) - (a.score||0));
+  return (filtered[0]?.category) || (categoryScores[0]?.category) || 'Général';
+}
+
+// Déduit la tonalité à partir des catégories "Positif"/"Négatif"/"Neutre"
+function pickTone(categoryScores){
+  if(!Array.isArray(categoryScores)) return 'neutral';
+  const byName = {};
+  for(const c of categoryScores){
+    byName[(c.category || '').toLowerCase()] = c.score || 0;
+  }
+  const pos = byName['positif'] || byName['positive'] || 0;
+  const neg = byName['négatif'] || byName['negatif'] || byName['negative'] || 0;
+  const neu = byName['neutre']  || byName['neutral']  || 0;
+
+  if(pos > neg && pos > neu) return 'positive';
+  if(neg > pos && neg > neu) return 'negative';
+  if(neu > pos && neu > neg) return 'neutral';
+  // fallback simple : si rien, neutre
+  return 'neutral';
+}
+
+// ==================== Fenêtre de résultats ====================
 function openResults(news){
   const body = document.getElementById('resultsBody');
   body.innerHTML = '';
@@ -196,24 +203,33 @@ function openResults(news){
 
     const title = document.createElement('h3');
     title.className = 'news-title';
-    title.textContent = item.title;
+
+    if(item.link && item.link !== '#'){
+      const a = document.createElement('a');
+      a.href = item.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.textContent = item.title;
+      a.className = 'link';
+      title.appendChild(a);
+    } else {
+      title.textContent = item.title;
+    }
 
     const meta = document.createElement('div');
     meta.className = 'news-meta';
 
     const theme = document.createElement('span');
     theme.className = 'badge';
-    theme.textContent = item.themeLabel ?? item.theme;
+    theme.textContent = item.themeLabel ?? 'Général';
 
     const tone = document.createElement('span');
-    tone.className = 'badge tone ' + (item.tone || 'neutral'); // 'positive' | 'neutral' | 'negative'
-    tone.textContent = item.tone?.toUpperCase?.() || 'NEUTRE';
+    tone.className = 'badge tone ' + (item.tone || 'neutral');
+    tone.textContent = (item.tone ? item.tone.toUpperCase() : 'NEUTRE');
 
     meta.append(theme, tone);
 
     const summary = document.createElement('p');
     summary.className = 'news-summary';
-    summary.textContent = item.summary;
+    summary.textContent = item.summary || '';
 
     card.append(title, meta, summary);
     list.append(card);
@@ -223,40 +239,39 @@ function openResults(news){
   document.getElementById('results').showModal();
 }
 
-function buildMockNewsFromPayload(payload){
-  // crée 6 à 10 articles en privilégiant les thèmes au level élevé
-  const entries = [];
-  const themesArray = Object.entries(payload.themes) // [key, {level, rss}]
-    .map(([k,v]) => {
-      const t = THEMES.find(x => x.key === k);
-      return { key:k, label:t?.label || k, level:v.level };
-    })
-    .sort((a,b)=> b.level - a.level);
+// ==================== Appel API (réel, sans mock) ====================
+document.getElementById('fetchBtn').addEventListener('click', async () => {
+  const payload = getPayloadTyped();
+  out.textContent = '';
+  showLoading('Analyse de vos préférences…');
 
-  const tones = ['positive','neutral','negative'];
-
-  const count = Math.max(6, Math.min(10, themesArray.length * 2));
-  for(let i=0; i<count; i++){
-    const pick = weightedPick(themesArray); // favorise level élevés
-    const tone = tones[Math.floor(Math.random()*tones.length)];
-
-    entries.push({
-      theme: pick.key,
-      themeLabel: pick.label,
-      title: `(${pick.label}) Titre d’article fictif ${i+1}`,
-      summary: `Ceci est un résumé simulé, généré pour illustrer l’aperçu des résultats en fonction du poids attribué à « ${pick.label} ». Le vrai backend renverra ici un résumé concis.`,
-      tone
+  try{
+    const res = await fetch('http://localhost:8080/api/preferences', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
     });
-  }
-  return entries;
-}
 
-function weightedPick(arr){
-  // poids = level (1..5)
-  const total = arr.reduce((s,a)=> s + a.level, 0) || 1;
-  let r = Math.random() * total;
-  for(const a of arr){
-    if((r -= a.level) <= 0) return a;
+    if(!res.ok){
+      hideLoading();
+      toast('Erreur côté serveur');
+      return;
+    }
+
+    // On attend un JSON { newsCollection: [...] }
+    const data = await res.json();
+    const news = normalizeNews(data);
+
+    hideLoading();
+    if(!news.length){
+      toast('Pas d’articles trouvés pour ces préférences');
+      return;
+    }
+    openResults(news);
+
+  } catch (e){
+    console.error(e);
+    hideLoading();
+    toast('Impossible de contacter l’API locale');
   }
-  return arr[arr.length-1];
-}
+});
