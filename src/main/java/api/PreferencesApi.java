@@ -10,6 +10,7 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import model.News;
+import model.NewsCategoryScoreCollection;
 import model.NewsCollection;
 import org.eclipse.jetty.http.HttpMethod;
 import rss.LeMondeRSSFetcher;
@@ -93,10 +94,8 @@ public class PreferencesApi {
         try {
             NewsCollection newsCollection = initNewsCollection();
 
-            PreferencesRequest req = MAPPER.readValue(ctx.body(), PreferencesRequest.class);
-
-
-            // Integer sciencesLevel = req.getThemes().getSciences().getLevel();
+            NewsCategoryScoreCollection preferences = MAPPER.readValue(ctx.body(), NewsCategoryScoreCollection.class);
+            List<News> sortedNews = sortNewsWithLLM(newsCollection, preferences);
 
             // TODO: brancher ici votre pipeline RSS + scoring IA
             ctx.status(HttpStatus.OK)
@@ -111,20 +110,20 @@ public class PreferencesApi {
         }
     }
 
-    private static List<News> sortNewsWithLLM(NewsCollection newsCollection, Map<String, Integer> userPreferences) {
+    private static List<News> sortNewsWithLLM(NewsCollection newsCollection, NewsCategoryScoreCollection userPreferences) {
         try {
             String newsJson = MAPPER.writeValueAsString(newsCollection.getNewsCollection());
             String preferencesJson = MAPPER.writeValueAsString(userPreferences);
 
             String prompt = """
         Tu es un système intelligent qui trie des actualités pour un utilisateur.
-        Tu reçois des préférences utilisateur (0=déteste, 5=adore) et une liste de news.
+        Tu reçois des préférences utilisateur (1=déteste, 5=adore) et une liste de news.
 
         TA TÂCHE :
         1. Pour chaque news, analyse son titre et sa description pour déterminer ses thèmes principaux (ex: "politique", "sport", "sciences", etc.).
         2. Crée un champ "categoryScores". Ce champ doit être une LISTE d'objets.
-        3. Pour chaque thème identifié, ajoute un objet à la liste avec un "score" ENTIER de 0 (pas pertinent) à 4 (très pertinent).
-        4. Filtre les news dont le thème principal correspond à une préférence utilisateur de 0.
+        3. Pour chaque thème identifié, ajoute un objet à la liste avec un "score" ENTIER de 1 (pas pertinent) à 4 (très pertinent).
+        4. Filtre les news dont le thème principal correspond à une préférence utilisateur de 1.
         5. Trie les news restantes par pertinence décroissante, en favorisant les thèmes que l'utilisateur adore (préférence 4-5).
         
         Retourne UNIQUEMENT le JSON trié. N'ajoute aucun commentaire.
@@ -166,72 +165,8 @@ public class PreferencesApi {
     }
 
 
-    // ==================== DTOs ====================
 
-    public static class PreferencesRequest {
-        private Instant ts;
-        private Themes themes;
 
-        public PreferencesRequest() {}
-
-        public Instant getTs() { return ts; }
-        public void setTs(Instant ts) { this.ts = ts; }
-        public Themes getThemes() { return themes; }
-        public void setThemes(Themes themes) { this.themes = themes; }
-    }
-
-    /**
-     * Groupe typé des thèmes pour supporter l'accès obj.getThemes().getSciences().getLevel().
-     * Chaque thème est une ThemeSelection (level + rss).
-     */
-    public static class Themes {
-        @JsonProperty("politique")     private ThemeSelection politique;
-        @JsonProperty("international") private ThemeSelection international;
-        @JsonProperty("economie")      private ThemeSelection economie;
-        @JsonProperty("societe")       private ThemeSelection societe;
-        @JsonProperty("sport")         private ThemeSelection sport;
-        @JsonProperty("culture")       private ThemeSelection culture;
-        @JsonProperty("sciences")      private ThemeSelection sciences;
-        @JsonProperty("planete")       private ThemeSelection planete;
-        @JsonProperty("technologies")  private ThemeSelection technologies;
-        @JsonProperty("sante")         private ThemeSelection sante;
-        @JsonProperty("education")     private ThemeSelection education;
-        @JsonProperty("idees")         private ThemeSelection idees;
-
-        public Themes() {}
-
-        public ThemeSelection getPolitique() { return politique; }
-        public ThemeSelection getInternational() { return international; }
-        public ThemeSelection getEconomie() { return economie; }
-        public ThemeSelection getSociete() { return societe; }
-        public ThemeSelection getSport() { return sport; }
-        public ThemeSelection getCulture() { return culture; }
-        public ThemeSelection getSciences() { return sciences; }
-        public ThemeSelection getPlanete() { return planete; }
-        public ThemeSelection getTechnologies() { return technologies; }
-        public ThemeSelection getSante() { return sante; }
-        public ThemeSelection getEducation() { return education; }
-        public ThemeSelection getIdees() { return idees; }
-    }
-
-    public static class ThemeSelection {
-        private Integer level; // 1..5
-        private String rss;    // URL du flux
-
-        public ThemeSelection() {}
-        public ThemeSelection(Integer level, String rss) {
-            this.level = level; this.rss = rss;
-        }
-        public Integer getLevel() { return level; }
-        public void setLevel(Integer level) { this.level = level; }
-        public String getRss() { return rss; }
-        public void setRss(String rss) { this.rss = rss; }
-    }
-
-    public static class Ack {
-        public String status; public Instant receivedAt;
-        public Ack(String status, Instant receivedAt){ this.status = status; this.receivedAt = receivedAt; }
-    }
     public static class Error {
         public String code; public String message;
         public Error(String code, String message){ this.code = code; this.message = message; }
