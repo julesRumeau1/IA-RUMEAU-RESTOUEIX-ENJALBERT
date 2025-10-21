@@ -24,22 +24,7 @@ import java.time.Duration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
-/**
- * Mini API locale avec une seule route POST qui reçoit les préférences utilisateur.
- * Démarrage : exécuter PreferencesApi#main (http://localhost:8080).
- *
- * Gradle:
- *   implementation("io.javalin:javalin:5.6.2")
- *   implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")
- *
- * Maven:
- *   <dependency>
- *     <groupId>io.javalin</groupId><artifactId>javalin</artifactId><version>5.6.2</version>
- *   </dependency>
- *   <dependency>
- *     <groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><version>2.17.1</version>
- *   </dependency>
- */
+
 public class PreferencesApi {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
@@ -47,13 +32,11 @@ public class PreferencesApi {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // garder ISO-8601
             .registerModule(new JavaTimeModule());                   // <-- support de Instant/LocalDate*
 
-    // ↓↓↓ AJOUTEZ CECI ↓↓↓
     private static final ChatLanguageModel llm = OllamaChatModel.builder()
-            .baseUrl("http://localhost:11434") // Assurez-vous que c'est la bonne URL
-            .modelName("mistral")               // Le modèle que vous utilisez
-            .timeout(Duration.ofMinutes(5))     // Laissez au LLM le temps de traiter les news
+            .baseUrl("http://localhost:11434")
+            .modelName("mistral")
+            .timeout(Duration.ofMinutes(5))
             .build();
-    // ↑↑↑ FIN DE L'AJOUT ↑↑↑
 
     public static void main(String[] args) {
         int port = 8080;
