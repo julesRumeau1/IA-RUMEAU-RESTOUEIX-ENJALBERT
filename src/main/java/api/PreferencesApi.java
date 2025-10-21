@@ -18,6 +18,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
+import java.time.Duration;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
 /**
  * Mini API locale avec une seule route POST qui reçoit les préférences utilisateur.
  * Démarrage : exécuter PreferencesApi#main (http://localhost:8080).
@@ -41,6 +47,13 @@ public class PreferencesApi {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // garder ISO-8601
             .registerModule(new JavaTimeModule());                   // <-- support de Instant/LocalDate*
 
+    // ↓↓↓ AJOUTEZ CECI ↓↓↓
+    private static final ChatLanguageModel llm = OllamaChatModel.builder()
+            .baseUrl("http://localhost:11434") // Assurez-vous que c'est la bonne URL
+            .modelName("mistral")               // Le modèle que vous utilisez
+            .timeout(Duration.ofMinutes(5))     // Laissez au LLM le temps de traiter les news
+            .build();
+    // ↑↑↑ FIN DE L'AJOUT ↑↑↑
 
     public static void main(String[] args) {
         int port = 8080;
@@ -114,6 +127,61 @@ public class PreferencesApi {
                     .json(new Error("server_error", e.getMessage()));
         }
     }
+
+    private static List<News> sortNewsWithLLM(NewsCollection newsCollection, Map<String, Integer> userPreferences) {
+        try {
+            String newsJson = MAPPER.writeValueAsString(newsCollection.getNewsCollection());
+            String preferencesJson = MAPPER.writeValueAsString(userPreferences);
+
+            String prompt = """
+        Tu es un système intelligent qui trie des actualités pour un utilisateur.
+        Tu reçois des préférences utilisateur (0=déteste, 5=adore) et une liste de news.
+
+        TA TÂCHE :
+        1. Pour chaque news, analyse son titre et sa description pour déterminer ses thèmes principaux (ex: "politique", "sport", "sciences", etc.).
+        2. Crée un champ "categoryScores". Ce champ doit être une LISTE d'objets.
+        3. Pour chaque thème identifié, ajoute un objet à la liste avec un "score" ENTIER de 0 (pas pertinent) à 4 (très pertinent).
+        4. Filtre les news dont le thème principal correspond à une préférence utilisateur de 0.
+        5. Trie les news restantes par pertinence décroissante, en favorisant les thèmes que l'utilisateur adore (préférence 4-5).
+        
+        Retourne UNIQUEMENT le JSON trié. N'ajoute aucun commentaire.
+
+        PRÉFÉRENCES UTILISATEUR :
+        %s
+
+        NEWS (JSON en entrée) :
+        %s
+
+        FORMAT DE RÉPONSE ATTENDU (JSON uniquement, attention à "categoryScores") :
+        [
+          {
+            "title": "...",
+            "link": "...",
+            "description": "...",
+            "categoryScores": [
+              {"category": "sport", "score": 4},
+              {"category": "politique", "score": 1}
+            ]
+          },
+          ...
+        ]
+        """.formatted(preferencesJson, newsJson);
+
+            // Appel du modèle via LangChain4j
+            String llmResponse = llm.generate(prompt);
+
+            // Conversion JSON → List<News>
+            // Ceci fonctionnera car nos POJOs (News, NewsCategoryScore)
+            // correspondent maintenant au format JSON demandé.
+            return MAPPER.readValue(llmResponse, new TypeReference<List<News>>() {});
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Erreur tri LLM: " + e.getMessage());
+            return newsCollection.getNewsCollection(); // en fallback on renvoie tout
+        }
+    }
+
 
     // ==================== DTOs ====================
 

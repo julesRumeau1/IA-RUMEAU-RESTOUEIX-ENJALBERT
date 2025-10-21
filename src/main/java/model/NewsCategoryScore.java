@@ -1,13 +1,26 @@
 package model;
 
+/**
+ * POJO pour un score de catégorie.
+ */
 public class NewsCategoryScore {
-    private final String category;
-    private final int score; // 0 à 4
+    private String category;
+    private int score; // 0 à 4
 
+    /**
+     * Constructeur par défaut (vide) requis par Jackson
+     */
+    public NewsCategoryScore() {
+    }
+
+    /**
+     * Constructeur utilitaire
+     */
     public NewsCategoryScore(String category, int score) {
         this.category = category;
-        this.score = Math.max(0, Math.min(score, 4)); // clamp entre 0 et 4
+        this.setScore(score);
     }
+
 
     public String getCategory() {
         return category;
@@ -15,6 +28,16 @@ public class NewsCategoryScore {
 
     public int getScore() {
         return score;
+    }
+
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public void setScore(int score) {
+        // contraindre la valeur entre 0 et 4
+        this.score = Math.max(0, Math.min(score, 4));
     }
 
     @Override

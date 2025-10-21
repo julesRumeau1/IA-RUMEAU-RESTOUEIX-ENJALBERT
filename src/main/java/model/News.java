@@ -1,44 +1,74 @@
 package model;
 
-import java.util.ArrayList;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
+/**
+ * POJO représentant une news.
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class News {
+
     private String title;
     private String link;
     private String description;
 
     private List<NewsCategoryScore> categoryScores;
 
+    /**
+     * Constructeur par défaut requis par Jackson
+     */
+    public News() {
+    }
+
+    /**
+     * Constructeur utilitaire
+     */
     public News(String title, String link, String description) {
         this.title = title;
         this.link = link;
         this.description = description;
-
-        this.categoryScores = computeScores(); // tu peux faire une vraie logique IA plus tard
     }
 
-    private List<NewsCategoryScore> computeScores() {
-        List<NewsCategoryScore> scores = new ArrayList<>();
+    public String getTitle() {
+        return title;
+    }
 
-        // EXEMPLE STUPIDE à remplacer par une vraie logique de scoring
-        int politiqueScore = 0;
-        if (title.toLowerCase().contains("politique")) politiqueScore += 2;
-        if (description.toLowerCase().contains("gouvernement")) politiqueScore += 1;
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-        scores.add(new NewsCategoryScore("Politique", Math.min(politiqueScore, 4)));
+    public String getLink() {
+        return link;
+    }
 
-        // Tu peux ajouter d'autres catégories ici
-        scores.add(new NewsCategoryScore("Positif", 0)); // par défaut
+    public void setLink(String link) {
+        this.link = link;
+    }
 
-        return scores;
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public List<NewsCategoryScore> getCategoryScores() {
         return categoryScores;
     }
 
+    public void setCategoryScores(List<NewsCategoryScore> categoryScores) {
+        this.categoryScores = categoryScores;
+    }
+
+    /**
+     * Méthode utilitaire pour récupérer un score (si besoin)
+     */
     public int getScoreFor(String category) {
+        if (categoryScores == null) {
+            return 0;
+        }
         return categoryScores.stream()
                 .filter(c -> c.getCategory().equalsIgnoreCase(category))
                 .map(NewsCategoryScore::getScore)
@@ -48,19 +78,9 @@ public class News {
 
     @Override
     public String toString() {
-        return title + "\n" + link + "\nCatégories: " + categoryScores + "\n";
+        return "News{" +
+                "title='" + title + '\'' +
+                ", scores=" + categoryScores +
+                '}';
     }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getLink() {
-        return link;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
 }
