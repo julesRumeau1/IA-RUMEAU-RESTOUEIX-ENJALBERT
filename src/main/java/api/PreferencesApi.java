@@ -74,7 +74,8 @@ public class PreferencesApi {
         NewsCollection newsCollection = new NewsCollection();
         List<Map<String, String>> rawNews = LeMondeRSSFetcher.fetchRawNews();
 
-        for (Map<String, String> newsData : rawNews) {
+        // MODIFICATION : On utilise stream().limit(1) pour ne prendre que le premier élément
+        rawNews.stream().limit(1).forEach(newsData -> {
             // Créer un objet News à partir des données brutes
             String title = newsData.get("title");
             String link = newsData.get("link");
@@ -84,7 +85,7 @@ public class PreferencesApi {
 
             // Ajouter la news dans la collection
             newsCollection.add(news);
-        }
+        });
 
         return newsCollection;
     }
@@ -95,10 +96,10 @@ public class PreferencesApi {
 
             PreferencesRequest req = MAPPER.readValue(ctx.body(), PreferencesRequest.class);
 
+            Map<String, Integer> userPreferences = flattenPreferences(req.getThemes());
 
-            // Integer sciencesLevel = req.getThemes().getSciences().getLevel();
+            List<News> sortedNews = sortNewsWithLLM(newsCollection, userPreferences);
 
-            // TODO: brancher ici votre pipeline RSS + scoring IA
             ctx.status(HttpStatus.OK)
                     .json(newsCollection);
 
@@ -109,6 +110,33 @@ public class PreferencesApi {
             ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .json(new Error("server_error", e.getMessage()));
         }
+    }
+
+
+    private static Map<String, Integer> flattenPreferences(Themes themes) {
+        Map<String, Integer> preferences = new java.util.HashMap<>();
+
+        try {
+            for (java.lang.reflect.Field field : themes.getClass().getDeclaredFields()) {
+                field.setAccessible(true);
+                Object value = field.get(themes);
+                if (value instanceof ThemeSelection) {
+                    ThemeSelection selection = (ThemeSelection) value;
+                    if (selection.getLevel() != null) {
+                        JsonProperty annotation = field.getAnnotation(JsonProperty.class);
+                        String themeName = (annotation != null) ? annotation.value() : field.getName();
+
+                        preferences.put(themeName, selection.getLevel());
+                    }
+                }
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+        preferences.values().removeIf(v -> v == null || v == 0);
+
+        return preferences;
     }
 
     private static List<News> sortNewsWithLLM(NewsCollection newsCollection, Map<String, Integer> userPreferences) {
