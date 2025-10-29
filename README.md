@@ -1,7 +1,7 @@
 # 🧠 NewsSummarizer Agent
 
 ## 📌 Objectif du projet
-Concevoir un **agent intelligent** qui récupère des **actualités** via des **flux RSS**, filtre selon les **préférences utilisateur** (politique, sport, tech, etc.), puis **résume** les articles pertinents en s’appuyant sur **Ollama** (modèle **Mistral**) pour l’inférence locale.
+Concevoir un **agent intelligent** qui récupère des **actualités** via des **flux RSS**, filtre selon les **préférences utilisateur** (politique, sport, tech, etc.), puis **résume** les articles pertinents en s’appuyant sur **Ollama** (modèle **Phi4-mini**) pour l’inférence locale.
 
 ---
 
@@ -39,7 +39,7 @@ docs/
 
 ## 🧰 Technologies utilisées
 - **Langage principal :** Java
-- **Backend IA :** Ollama (`mistral`)
+- **Backend IA :** Ollama (`phi4-mini`)
 - **Parsing RSS :** Rome (ou équivalent)
 - **JSON :** Gson / Jackson
 - **Tests :** JUnit
@@ -60,7 +60,7 @@ cd IA-RUMEAU-RESTOUEIX-ENJALBERT
 
 ### 3) Télécharger le modèle
 ```bash
-ollama pull mistral
+ollama pull phi4-mini
 ```
 
 ### 4) Compiler et exécuter (exemple)
@@ -74,7 +74,7 @@ java -cp bin main.App
 ## 🧠 Utilisation (flux simple)
 1. Lancer l’application.
 2. Renseigner vos thèmes d’intérêt (ex. `politique`, `sport`, `économie`).
-3. L’agent récupère les flux RSS, filtre et résume via Mistral.
+3. L’agent récupère les flux RSS, filtre et résume via Phi4-mini.
 4. Ajuster les préférences à tout moment.
 
 ---
@@ -85,7 +85,7 @@ java -cp bin main.App
 ## 💡 Exemple d’appel Ollama
 ```json
 {
-  "model": "mistral",
+  "model": "phi4-mini",
   "prompt": "Résume en 3 phrases les actualités du jour sur le thème 'politique'.",
   "stream": false
 }
