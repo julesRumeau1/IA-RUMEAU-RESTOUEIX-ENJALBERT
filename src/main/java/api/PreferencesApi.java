@@ -37,7 +37,7 @@ public class PreferencesApi {
 
     private static final ChatLanguageModel llm = OllamaChatModel.builder()
             .baseUrl("http://localhost:11434")
-            .modelName("mistral")
+            .modelName("phi4-mini")
             .timeout(Duration.ofMinutes(5))
             .build();
 
