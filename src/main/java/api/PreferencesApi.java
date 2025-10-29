@@ -1,382 +1,248 @@
 package api;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import model.News;
 import model.NewsCategoryScore;
 import model.NewsCollection;
 import rss.LeMondeRSSFetcher;
+import api.dto.ErrorResponse;
+import api.dto.PreferencesRequest;
+import api.util.CorsUtil;
+import api.util.PreferencesUtils;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+/**
+ * API permettant de faire le lien entre le front et la back, puis de gérer les préférences et le scoring
+ */
+public final class PreferencesApi {
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.ollama.OllamaChatModel;
-import java.time.Duration;
-import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-
-
-public class PreferencesApi {
-
+    private static final Logger LOGGER = Logger.getLogger(PreferencesApi.class.getName());
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .registerModule(new JavaTimeModule());
 
-    private static final ChatLanguageModel llm = OllamaChatModel.builder()
+    private static final ChatLanguageModel LLM = OllamaChatModel.builder()
             .baseUrl("http://localhost:11434")
             .modelName("phi4-mini")
             .timeout(Duration.ofMinutes(5))
             .build();
 
     private static final Map<Integer, Integer> PREFERENCE_WEIGHTS = Map.of(
-            1, -5,  // Forte pénalité
-            2, -1,  // Légère pénalité
-            3, 1,   // Score de base
-            4, 3,   // Bonus
-            5, 5    // Fort bonus
+            1, -5,
+            2, -1,
+            3, 1,
+            4, 3,
+            5, 5
     );
 
+    /**
+     * Démarre le serveur API (est appelé depuis la classe Main à la racine)
+     * @param args arguments
+     */
     public static void main(String[] args) {
-        int port = 8080;
+        final int port = 8080;
         Javalin app = Javalin.create(cfg -> {
-            cfg.http.defaultContentType = "application/json";
-        }).start(port);
+                cfg.http.defaultContentType = "application/json";
+              cfg.plugins.enableDevLogging();
+        })
+
+                .start(port);
 
         app.options("/api/preferences", ctx -> {
-            setCors(ctx);
+            CorsUtil.setCors(ctx);
             ctx.status(204);
         });
 
         app.post("/api/preferences", ctx -> {
-            setCors(ctx);
+            CorsUtil.setCors(ctx);
             handlePreferences(ctx);
         });
 
         app.get("/health", ctx -> ctx.result("ok"));
-        System.out.println("API sur http://localhost:" + port + "/api/preferences");
+        LOGGER.info(() -> "API: http://localhost:" + port + "/api/preferences");
     }
 
-    private static void setCors(Context ctx) {
-        ctx.header("Access-Control-Allow-Origin", "*");
-        ctx.header("Access-Control-Allow-Methods", "POST, OPTIONS");
-        ctx.header("Access-Control-Allow-Headers", "Content-Type");
-        ctx.header("Vary", "Origin");
-    }
-
+    /**
+     * Permet de définir la structure d'une collection de news (titre, lien, ...)
+     * @return la collection de news
+     */
     private static NewsCollection initNewsCollection() {
         NewsCollection newsCollection = new NewsCollection();
         List<Map<String, String>> rawNews = LeMondeRSSFetcher.fetchRawNews();
 
         for (Map<String, String> newsData : rawNews) {
-            // Créer un objet News à partir des données brutes
             String title = newsData.get("title");
             String link = newsData.get("link");
             String description = newsData.get("description");
-
             News news = new News(title, link, description);
-
-            // Ajouter la news dans la collection
             newsCollection.add(news);
         }
-
         return newsCollection;
     }
 
-
+    /**
+     * Permet de gérer les préférences de l'utilisateur et de les envoyer au modèle
+     * @param ctx Contexte de la requête HTTP envoyé depuis le front
+     */
     private static void handlePreferences(Context ctx) {
         try {
-            // Récupérer les news et les préférences
             NewsCollection newsCollection = initNewsCollection();
             PreferencesRequest req = MAPPER.readValue(ctx.body(), PreferencesRequest.class);
-            Map<String, Integer> userPreferences = flattenPreferences(req.getThemes());
+            Map<String, Integer> userPreferences = PreferencesUtils.flattenPreferences(req.getThemes());
 
-            // CATÉGORISATION (LLM)
             List<String> allowedCategories = new ArrayList<>(userPreferences.keySet());
             NewsCollection categorizedNews = categorizeNewsWithLLM(newsCollection, allowedCategories);
 
+            if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+                try {
+                    LOGGER.fine("--- JSON après catégorisation ---\n"
+                            + MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(categorizedNews));
+                } catch (JsonProcessingException ignored) {
+                    // pas d'erreur loggé
+                }
+            }
 
-            try {
-                System.out.println("--- 1. JSON Après Catégorisation (Avant Tri) ---");
-                System.out.println(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(categorizedNews));
-                System.out.println("-------------------------------------------------");
-            } catch (JsonProcessingException e) {}
-
-            // TRI (LLM - Prompt 2)
             List<News> sortedNews = sortNewsByPreference(categorizedNews, userPreferences);
-            try {
-                System.out.println("--- 2. JSON Après Tri (Liste 'sortedNews') ---");
-                System.out.println(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(sortedNews));
-                System.out.println("-------------------------------------------------");
-            } catch (JsonProcessingException e) { /* ... */ }
 
-            ctx.status(HttpStatus.OK)
-                    .json(new NewsCollection(sortedNews));
+            if (LOGGER.isLoggable(java.util.logging.Level.FINE)) {
+                try {
+                    LOGGER.fine("--- JSON après tri ---\n"
+                            + MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(sortedNews));
+                } catch (JsonProcessingException ignored) {
+                    // pas d'erreur loggé
+                }
+            }
+
+            ctx.status(HttpStatus.OK).json(new NewsCollection(sortedNews));
 
         } catch (JsonProcessingException e) {
             ctx.status(HttpStatus.BAD_REQUEST)
-                    .json(new Error("invalid_json", e.getOriginalMessage()));
+                    .json(new ErrorResponse("invalid_json", e.getOriginalMessage()));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.severe(e::getMessage);
             ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .json(new Error("server_error", e.getMessage()));
+                    .json(new ErrorResponse("server_error", e.getMessage()));
         }
     }
 
-
-    // ===================================================================
-    // ÉTAPE 1 : NOUVELLE VERSION (1 Prompt par Article)
-    // ===================================================================
     /**
-     * ÉTAPE 1 : Catégorise une collection de news en appelant le LLM
-     * POUR CHAQUE article.
+     * Catégorise chaque nouvelles news en utilisant un modèle et une liste de catégorie
+     * @param newsCollection collection de news
+     * @param allowedCategories catégories de news
+     * @return la collection de news catégorisé
+     * @throws Exception Si problème lors de la catégorisation
      */
-    private static NewsCollection categorizeNewsWithLLM(NewsCollection newsCollection, List<String> allowedCategories) throws Exception {
+    private static NewsCollection categorizeNewsWithLLM(
+            NewsCollection newsCollection,
+            List<String> allowedCategories) throws Exception {
 
         List<News> categorizedNewsList = new ArrayList<>();
         String categoriesJson = MAPPER.writeValueAsString(allowedCategories);
 
-        System.out.println("--- Début de la Catégorisation (1 par 1) ---");
-
-        // On boucle sur chaque article
         for (News newsItem : newsCollection.getNewsCollection()) {
-
-            // On sérialise UN SEUL article
             String newsJson = MAPPER.writeValueAsString(newsItem);
 
             String prompt = """
-            Tu es un système expert en catégorisation d'actualités.
-            TA TÂCHE : Analyser l'article (titre et description) et ajouter le champ "categoryScores".
+          Tu es un système expert en catégorisation d'actualités.
+          TA TÂCHE : Analyser l'article (titre et description) et ajouter le champ "categoryScores".
 
-            CONTRAINTES STRICTES :
-            1.  CATEGORIES AUTORISÉES : Tu dois UNIQUEMENT utiliser les catégories de cette liste : %s
-            2.  LIMITE : Tu dois assigner au MAXIMUM 2 catégories par article (les plus pertinentes).
-            3.  SCORE : Pour chaque catégorie assignée, donne un score ENTIER de 1 (pertinence faible) à 4 (pertinence très élevée).
-            4.  FORMAT : Si aucune catégorie autorisée n'est pertinente, le champ "categoryScores" doit être [].
+          CONTRAINTES :
+          1) Utiliser UNIQUEMENT ces catégories : %s
+          2) Au maximum 2 catégories par article.
+          3) Score ENTIER 1..4 par catégorie retenue.
+          4) Si aucune catégorie pertinente : "categoryScores": [].
 
-            Retourne UNIQUEMENT le JSON de l'article MIS À JOUR (un seul objet JSON). N'ajoute aucun commentaire.
+          Retourne UNIQUEMENT l'objet JSON de l'article mis à jour.
 
-            LISTE DES CATEGORIES AUTORISÉES :
-            %s
+          CATEGORIES AUTORISÉES :
+          %s
 
-            ARTICLE (JSON en entrée) :
-            %s
-
-            FORMAT DE RÉPONSE ATTENDU (JSON objet unique) :
-            [
-              {
-                "title": "",
-                "link": "",
-                "description": "",
-                "categoryScores": [
-                  {"category": "sport", "score": 4},
-                  {"category": "politique", "score": 1}
-                ]
-              },
-            ]
-            """.formatted(categoriesJson, categoriesJson, newsJson);
+          ARTICLE (JSON) :
+          %s
+          """.formatted(categoriesJson, categoriesJson, newsJson);
 
             try {
-                // Appel du modèle via LangChain4j
-                String llmResponse = llm.generate(prompt);
-
-                // ==================== BLOC DE NETTOYAGE ROBUSTE (pour OBJET) ====================
-
-                System.out.println("--- DEBUG: Réponse BRUTE LLM (Article: " + newsItem.getTitle() + ") ---");
-                System.out.println(llmResponse);
-                System.out.println("----------------------------------------------");
-
-                // Extraction robuste du bloc JSON : cherche { ... } au lieu de [ ... ]
+                String llmResponse = LLM.generate(prompt);
                 int startIndex = llmResponse.indexOf('{');
                 int endIndex = llmResponse.lastIndexOf('}');
                 String cleanedResponse;
-
                 if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
                     cleanedResponse = llmResponse.substring(startIndex, endIndex + 1);
                 } else {
-                    System.err.println("ERREUR (Etape 1): Bloc JSON '{}' non trouvé pour l'article: " + newsItem.getTitle());
-                    cleanedResponse = llmResponse; // Laisse le parseur échouer
+                    cleanedResponse = llmResponse;
                 }
-
-                // Parse UN SEUL objet News (plus besoin de TypeReference)
                 News processedNews = MAPPER.readValue(cleanedResponse, News.class);
                 categorizedNewsList.add(processedNews);
-
-            } catch (Exception e) {
-                System.err.println("Erreur Etape 1 (Catégorisation LLM) pour l'article: " + newsItem.getTitle());
-                e.printStackTrace();
-                // En cas d'échec, on ajoute l'article original non catégorisé
+            } catch (Exception ex) {
+                LOGGER.warning(() -> "Catégorisation raté pour: " + newsItem.getTitle() + " -> " + ex.getMessage());
                 categorizedNewsList.add(newsItem);
             }
         }
-
-        System.out.println("--- Fin de la Catégorisation ---");
         return new NewsCollection(categorizedNewsList);
     }
 
-
-    // ===================================================================
-    // ÉTAPE 2 : TRI (Inchangée)
-    // ===================================================================
     /**
-     * ÉTAPE 2 : Trie les news DÉJÀ CATÉGORISÉES en utilisant un 2e prompt LLM.
-     * (Cette méthode est INCHANGÉE par rapport à la version précédente)
+     * Tri les news déjà catégorisé conformément aux préférences de l'utilisateur.
+     * @param newsCollection Collection de news trié
+     * @param userPreferences Préférence de l'utilisateur selon les thèmes sur une échele de 1 à 5
+     * @return Liste de news trié de façon décroissante
      */
-    private static List<News> sortNewsByPreference(NewsCollection newsCollection, Map<String, Integer> userPreferences) {
+    private static List<News> sortNewsByPreference(
+            NewsCollection newsCollection,
+            Map<String, Integer> userPreferences) {
 
-        // On crée une liste de "paires" (News, Score) pour le débogage
         List<Map.Entry<News, Integer>> scoredNews = newsCollection.getNewsCollection().stream()
-                .map(news -> {
-                    int score = calculateMatchScore(news, userPreferences);
-                    return Map.entry(news, score); // Crée une "paire"
-                })
+                .map(news -> Map.entry(news, calculateMatchScore(news, userPreferences)))
                 .collect(Collectors.toList());
 
-        // IMPRESSION 3 (Debug du Tri)
-        System.out.println("--- 3. Débogage des Scores de Tri (Logique Java) ---");
-        scoredNews.forEach(entry -> {
-            System.out.printf("Score: %-5d | Titre: %s\n", entry.getValue(), entry.getKey().getTitle());
-        });
-        System.out.println("--------------------------------------------------");
-
-        // Tri final basé sur le score (décroissant)
         return scoredNews.stream()
-                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue())) // Tri par score décroissant
-                .map(Map.Entry::getKey) // Récupère uniquement la News
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
+                .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Calcul le score pour une news en fonction des préférences utilisateurs
+     * @param news la news pour laquelle on calcul le "match score"
+     * @param userPreferences les préférences de l'utilisateur sur les thèmes
+     * @return le "match score" pour la news voulues
+     */
     private static int calculateMatchScore(News news, Map<String, Integer> userPreferences) {
-        // Si l'article n'a pas de catégorie, il va au fond du classement.
         if (news.getCategoryScores() == null || news.getCategoryScores().isEmpty()) {
             return -1000;
         }
-
         int totalScore = 0;
-        boolean hasAnyMatch = false;
+        boolean matched = false;
 
-        // On itère sur les catégories DE LA NEWS (assignées par le LLM)
-        for (NewsCategoryScore newsScoreEntry : news.getCategoryScores()) {
-            String newsCategory = newsScoreEntry.getCategory();
-            int newsScore = newsScoreEntry.getScore(); // 1-4 (pertinence de l'article)
-
-            // On vérifie si l'utilisateur a une préférence pour cette catégorie
-            if (userPreferences.containsKey(newsCategory)) {
-                hasAnyMatch = true;
-
-                // 1. Récupérer le NIVEAU de préférence (1-5)
-                int prefLevel = userPreferences.get(newsCategory);
-
-                // 2. Convertir le NIVEAU en POIDS (-5 à +5)
+        for (NewsCategoryScore entry : news.getCategoryScores()) {
+            String category = entry.getCategory();
+            int relevance = entry.getScore();
+            if (userPreferences.containsKey(category)) {
+                matched = true;
+                int prefLevel = userPreferences.get(category);
                 int prefWeight = PREFERENCE_WEIGHTS.getOrDefault(prefLevel, 0);
-
-                // 3. Calculer le score (Poids * Pertinence)
-                totalScore += prefWeight * newsScore;
+                totalScore += prefWeight * relevance;
             }
         }
-
-        // Si la news n'a AUCUNE catégorie qui matche les préférences,
-        // on la pénalise, mais moins que si elle était non-catégorisée.
-        if (!hasAnyMatch) {
+        if (!matched) {
             return -500;
         }
-
         return totalScore;
-    }
-
-    // ... (Le reste de la classe, flattenPreferences et DTOs, est inchangé)
-
-    private static Map<String, Integer> flattenPreferences(Themes themes) {
-        Map<String, Integer> preferences = new java.util.HashMap<>();
-        try {
-            for (java.lang.reflect.Field field : themes.getClass().getDeclaredFields()) {
-                field.setAccessible(true);
-                Object value = field.get(themes);
-                if (value instanceof ThemeSelection) {
-                    ThemeSelection selection = (ThemeSelection) value;
-                    if (selection.getLevel() != null) {
-                        JsonProperty annotation = field.getAnnotation(JsonProperty.class);
-                        String themeName = (annotation != null) ? annotation.value() : field.getName();
-                        preferences.put(themeName, selection.getLevel());
-                    }
-                }
-            }
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return preferences;
-    }
-
-    // ==================== DTOs ====================
-
-    public static class PreferencesRequest {
-        private Instant ts;
-        private Themes themes;
-        public PreferencesRequest() {}
-        public Instant getTs() { return ts; }
-        public void setTs(Instant ts) { this.ts = ts; }
-        public Themes getThemes() { return themes; }
-        public void setThemes(Themes themes) { this.themes = themes; }
-    }
-
-    public static class Themes {
-        @JsonProperty("politique")     private ThemeSelection politique;
-        @JsonProperty("international") private ThemeSelection international;
-        @JsonProperty("economie")      private ThemeSelection economie;
-        @JsonProperty("societe")       private ThemeSelection societe;
-        @JsonProperty("sport")         private ThemeSelection sport;
-        @JsonProperty("culture")       private ThemeSelection culture;
-        @JsonProperty("sciences")      private ThemeSelection sciences;
-        @JsonProperty("planete")       private ThemeSelection planete;
-        @JsonProperty("technologies")  private ThemeSelection technologies;
-        @JsonProperty("sante")         private ThemeSelection sante;
-        @JsonProperty("education")     private ThemeSelection education;
-        @JsonProperty("idees")         private ThemeSelection idees;
-
-        public Themes() {}
-        public ThemeSelection getPolitique() { return politique; }
-        public ThemeSelection getInternational() { return international; }
-        public ThemeSelection getEconomie() { return economie; }
-        public ThemeSelection getSociete() { return societe; }
-        public ThemeSelection getSport() { return sport; }
-        public ThemeSelection getCulture() { return culture; }
-        public ThemeSelection getSciences() { return sciences; }
-        public ThemeSelection getPlanete() { return planete; }
-        public ThemeSelection getTechnologies() { return technologies; }
-        public ThemeSelection getSante() { return sante; }
-        public ThemeSelection getEducation() { return education; }
-        public ThemeSelection getIdees() { return idees; }
-    }
-
-    public static class ThemeSelection {
-        private Integer level;
-        private String rss;
-        public ThemeSelection() {}
-        public ThemeSelection(Integer level, String rss) { this.level = level; this.rss = rss; }
-        public Integer getLevel() { return level; }
-        public void setLevel(Integer level) { this.level = level; }
-        public String getRss() { return rss; }
-        public void setRss(String rss) { this.rss = rss; }
-    }
-
-    public static class Ack {
-        public String status; public Instant receivedAt;
-        public Ack(String status, Instant receivedAt){ this.status = status; this.receivedAt = receivedAt; }
-    }
-    public static class Error {
-        public String code; public String message;
-        public Error(String code, String message){ this.code = code; this.message = message; }
     }
 }
