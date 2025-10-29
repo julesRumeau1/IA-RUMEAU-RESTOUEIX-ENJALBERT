@@ -33,10 +33,10 @@ services:
     command: >
       '
         set -e
-        echo "Pull mistral..." &&
-        ollama pull mistral &&
+        echo "Pull phi..." &&
+        ollama pull phi4-mini &&
         echo "Smoke test..." &&
-        ollama run mistral "ping" >/dev/null &&
+        ollama run phi "ping" >/dev/null &&
         echo "Init OK" 
       '
 
