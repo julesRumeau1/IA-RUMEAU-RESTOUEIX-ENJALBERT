@@ -5,7 +5,7 @@ package model;
  */
 public class NewsCategoryScore {
     private String category;
-    private int score; // 0 à 4
+    private int score;
 
     /**
      * Constructeur par défaut (vide) requis par Jackson
