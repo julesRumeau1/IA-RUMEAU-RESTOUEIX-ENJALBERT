@@ -3,23 +3,62 @@ package api.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Liste des thèmes pour formattage JSON
+ * Liste des thèmes pour le formattage JSON.
  */
-public class Themes {
+public final class Themes {
 
-    @JsonProperty("politique")     private ThemeSelection politique;
-    @JsonProperty("international") private ThemeSelection international;
-    @JsonProperty("economie")      private ThemeSelection economie;
-    @JsonProperty("societe")       private ThemeSelection societe;
-    @JsonProperty("sport")         private ThemeSelection sport;
-    @JsonProperty("culture")       private ThemeSelection culture;
-    @JsonProperty("sciences")      private ThemeSelection sciences;
-    @JsonProperty("planete")       private ThemeSelection planete;
-    @JsonProperty("technologies")  private ThemeSelection technologies;
-    @JsonProperty("sante")         private ThemeSelection sante;
-    @JsonProperty("education")     private ThemeSelection education;
-    @JsonProperty("idees")         private ThemeSelection idees;
+    /** Thème politique. */
+    @JsonProperty("politique")
+    private ThemeSelection politique;
 
+    /** Thème international. */
+    @JsonProperty("international")
+    private ThemeSelection international;
+
+    /** Thème économie. */
+    @JsonProperty("economie")
+    private ThemeSelection economie;
+
+    /** Thème société. */
+    @JsonProperty("societe")
+    private ThemeSelection societe;
+
+    /** Thème sport. */
+    @JsonProperty("sport")
+    private ThemeSelection sport;
+
+    /** Thème culture. */
+    @JsonProperty("culture")
+    private ThemeSelection culture;
+
+    /** Thème sciences. */
+    @JsonProperty("sciences")
+    private ThemeSelection sciences;
+
+    /** Thème planète. */
+    @JsonProperty("planete")
+    private ThemeSelection planete;
+
+    /** Thème technologies. */
+    @JsonProperty("technologies")
+    private ThemeSelection technologies;
+
+    /** Thème santé. */
+    @JsonProperty("sante")
+    private ThemeSelection sante;
+
+    /** Thème éducation. */
+    @JsonProperty("education")
+    private ThemeSelection education;
+
+    /** Thème idées. */
+    @JsonProperty("idees")
+    private ThemeSelection idees;
+
+    /**
+     * Constructeur vide requis pour la désérialisation JSON.
+     */
     public Themes() {
+        // Constructeur par défaut
     }
 }

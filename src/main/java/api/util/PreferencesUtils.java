@@ -8,19 +8,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Utile pour le mapping des préférences utilisateurs
+ * Utilitaires pour le mapping des préférences utilisateurs.
  */
 public final class PreferencesUtils {
 
     private PreferencesUtils() {
+        // utilitaire
     }
 
     /**
-     * Réorganisé les préférences pour avoir un dictionnaire nom -> valeur
-     * @param themes Le thème voulu
-     * @return Map thème -> niveau
+     * Réorganise les préférences pour avoir un dictionnaire
+     * « nom de thème » → « niveau ».
+     *
+     * @param themes les thèmes envoyés par le client
+     * @return une map thème → niveau
      */
-    public static Map<String, Integer> flattenPreferences(Themes themes) {
+    public static Map<String, Integer> flattenPreferences(
+            final Themes themes) {
         Map<String, Integer> preferences = new HashMap<>();
         if (themes == null) {
             return preferences;
@@ -32,14 +36,17 @@ public final class PreferencesUtils {
                 if (value instanceof ThemeSelection) {
                     ThemeSelection selection = (ThemeSelection) value;
                     if (selection.getLevel() != null) {
-                        JsonProperty annotation = field.getAnnotation(JsonProperty.class);
-                        String themeName = annotation != null ? annotation.value() : field.getName();
+                        JsonProperty annotation =
+                                field.getAnnotation(JsonProperty.class);
+                        String themeName = annotation != null
+                                ? annotation.value()
+                                : field.getName();
                         preferences.put(themeName, selection.getLevel());
                     }
                 }
             }
         } catch (IllegalAccessException e) {
-            // keep method side-effect free, just return what we have
+            // Reste sans effet visible : on renvoie ce qu'on a.
         }
         return preferences;
     }
