@@ -8,30 +8,50 @@ Concevoir un **agent intelligent** qui récupère des **actualités** via des **
 ## 🚀 Fonctionnalités
 - Récupération multi-flux RSS
 - Filtrage par thèmes et préférences
-- Résumés concis générés via Mistral (Ollama)
+- Résumés concis générés via Qwen2.5 3b (Ollama)
 - Interface web
 - Sauvegarde locale des préférences
 - Journalisation et gestion d’erreurs robuste
 
 ---
 
-## 🏗️ Architecture (prévisionnelle)
+## 🏗️ Architecture
 ```text
 src/
 ├─ main/
-│  ├─ App.java
-│  ├─ agent/
-│  │  ├─ NewsAgent.java
-│  │  ├─ Preferences.java
-│  ├─ api/
-│  │  ├─ OllamaClient.java
-│  │  └─ RssFetcher.java
-│  └─ ui/
-│     └─ ConsoleUI.java
-└─ test/
-   └─ ...
-docs/
-├─ diagramme_uml.plantuml
+│  ├─ java/
+│  │  ├─ api/
+│  │  │  ├─ dto/
+│  │  │  │  ├─ ErrorResponse.java
+│  │  │  │  ├─ PreferencesRequest.java
+│  │  │  │  ├─ Themes.java
+│  │  │  │  ├─ ThemeSelection.java
+│  │  │  │  └─ package-info.java
+│  │  │  ├─ util/
+│  │  │  │  ├─ CorsUtil.java
+│  │  │  │  ├─ PreferencesUtils.java
+│  │  │  │  └─ package-info.java
+│  │  │  ├─ PreferencesApi.java
+│  │  │  └─ package-info.java
+│  │  ├─ main/
+│  │  │  ├─ Main.java
+│  │  │  └─ package-info.java
+│  │  ├─ model/
+│  │  │  ├─ News.java
+│  │  │  ├─ NewsCategoryScore.java
+│  │  │  ├─ NewsCollection.java
+│  │  │  └─ package-info.java
+│  │  ├─ rss/
+│  │  │  ├─ LeMondeRSSFetcher.java
+│  │  │  └─ package-info.java
+│  │  └─ ui/
+│  │     ├─ index.html
+│  │     ├─ script.js
+│  │     └─ style.css
+│  ├─ resources/
+│  └─ test/
+└─ docs/
+
 └─ README.md
 ```
 
@@ -39,7 +59,7 @@ docs/
 
 ## 🧰 Technologies utilisées
 - **Langage principal :** Java
-- **Backend IA :** Ollama (`phi4-mini`)
+- **Backend IA :** Ollama (`qwen2.5-3b`)
 - **Parsing RSS :** Rome (ou équivalent)
 - **JSON :** Gson / Jackson
 - **Tests :** JUnit
@@ -58,23 +78,24 @@ git clone https://github.com/julesRumeau1/IA-RUMEAU-RESTOUEIX-ENJALBERT.git
 cd IA-RUMEAU-RESTOUEIX-ENJALBERT
 ```
 
-### 3) Télécharger le modèle
+### 3) Télécharger le modèle et lancer ollama
 ```bash
-ollama pull phi4-mini
+cd src
+sudo docker-compose up -d
 ```
 
 ### 4) Compiler et exécuter (exemple)
 ```bash
-javac -d bin src/main/App.java
-java -cp bin main.App
+javac -d bin src/java/main/Main.java
+java -cp bin main.Main
 ```
 
 ---
 
 ## 🧠 Utilisation (flux simple)
 1. Lancer l’application.
-2. Renseigner vos thèmes d’intérêt (ex. `politique`, `sport`, `économie`).
-3. L’agent récupère les flux RSS, filtre et résume via Phi4-mini.
+2. Renseigner vos thèmes d’intérêt sur l'interface web (ex. `politique`, `sport`, `économie`).
+3. L’agent récupère les flux RSS, filtre et résume via Qwen2.5 3b.
 4. Ajuster les préférences à tout moment.
 
 ---
@@ -85,7 +106,7 @@ java -cp bin main.App
 ## 💡 Exemple d’appel Ollama
 ```json
 {
-  "model": "phi4-mini",
+  "model": "qwen2.5:3b",
   "prompt": "Résume en 3 phrases les actualités du jour sur le thème 'politique'.",
   "stream": false
 }
@@ -96,7 +117,7 @@ java -cp bin main.App
 ## ✅ Bonnes pratiques
 - Modulariser le code (séparation agent / API / UI)
 - Gestion d’erreurs et validations (programmation défensive)
-- Commits réguliers, branches par fonctionnalité, issues GitHub
+- Commits réguliers, branches par fonctionnalité, pull request GitHub
 - Tests unitaires sur les parties critiques (parsing, filtrage)
 
 ---
