@@ -54,6 +54,9 @@ public final class PreferencesApi {
     /** Score appliqué si la news n'a pas matché l'une des prefs. */
     private static final int NO_MATCH_SCORE = -500;
 
+    /** Url vers le conteneur ollama. */
+    private static final String OLLAMAURL = System.getenv().getOrDefault("OLLAMA_HOST", "http://localhost:11434");
+
     /** Mapper JSON configuré. */
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
@@ -63,7 +66,7 @@ public final class PreferencesApi {
 
     /** Modèle de LLM pour la catégorisation. */
     private static final ChatLanguageModel LLM = OllamaChatModel.builder()
-            .baseUrl("http://localhost:11434")
+            .baseUrl(OLLAMAURL)
             .modelName("qwen2.5:3b")
             .timeout(Duration.ofMinutes(LLM_TIMEOUT_MINUTES))
             .build();
@@ -388,7 +391,15 @@ public final class PreferencesApi {
         }
         LOGGER.info(sortedLog.toString());
 
-        return allNews;
+        // ne garde que les news ou le score est supérieur a 0
+        List<News> filteredNews = new ArrayList<>();
+        for (News news : allNews) {
+            if (calculateMatchScore(news, userPreferences) >= 0) {
+                filteredNews.add(news);
+            }
+        }
+
+        return filteredNews;
     }
 
     /**
