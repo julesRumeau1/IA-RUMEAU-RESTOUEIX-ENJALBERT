@@ -33,10 +33,8 @@ services:
     command: >
       '
         set -e
-        echo "Pull phi..." &&
-        ollama pull phi4-mini &&
-        echo "Smoke test..." &&
-        ollama run phi "ping" >/dev/null &&
+        echo "Pull qwen2.5:3b..." &&
+        ollama pull qwen2.5:3b &&
         echo "Init OK" 
       '
 
