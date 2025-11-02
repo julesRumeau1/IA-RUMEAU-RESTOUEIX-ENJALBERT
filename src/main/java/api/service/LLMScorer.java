@@ -1,6 +1,7 @@
 package api.service;
 
 import api.PreferencesApi;
+import api.util.ApiException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,7 +59,14 @@ public class LLMScorer {
             NewsCollection newsCollection,
             List<String> orderedCategories,
             ChatLanguageModel llm
-    ) throws Exception {
+    ) throws ApiException {
+
+        if (newsCollection == null || newsCollection.getNewsCollection() == null) {
+            throw new ApiException("empty_news_collection", "La collection de news est vide ou nulle");
+        }
+        if (orderedCategories == null || orderedCategories.isEmpty()) {
+            throw new ApiException("empty_categories", "La liste de catégories est vide ou nulle");
+        }
         List<News> allNews = newsCollection.getNewsCollection();
         List<News> categorizedNewsList = new ArrayList<>();
 
@@ -102,6 +110,9 @@ public class LLMScorer {
 
             for (int j = 0; j < batch.size(); j++) {
                 News news = batch.get(j);
+                if (news == null || news.getTitle() == null || news.getDescription() == null) {
+                    throw new ApiException("invalid_news_item", "Un article du lot est invalide");
+                }
                 String batchId = String.valueOf(j + 1);
                 batchMap.put(batchId, news);
 
@@ -141,6 +152,10 @@ public class LLMScorer {
 
                 int startIndex = llmResponse.indexOf('{');
                 int endIndex = llmResponse.lastIndexOf('}');
+                if (startIndex == -1 || endIndex == -1 || endIndex <= startIndex) {
+                    throw new ApiException("invalid_llm_response", "Le LLM a retourné une réponse JSON invalide");
+                }
+
                 String cleanedResponse;
                 if (startIndex != -1 && endIndex != -1
                         && endIndex > startIndex) {
@@ -199,10 +214,7 @@ public class LLMScorer {
                 }
 
             } catch (Exception ex) {
-                LOGGER.warning(() ->
-                        "Catégorisation par lot ratée: "
-                                + ex.getMessage());
-                categorizedNewsList.addAll(batch);
+                throw new ApiException("llm_batch_failed", "Échec de catégorisation par le LLM : " + ex.getMessage());
             }
         }
         return new NewsCollection(categorizedNewsList);

@@ -251,10 +251,10 @@ document.getElementById('fetchBtn').addEventListener('click', async () => {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(payload)
     });
-
     if(!res.ok){
+      const errorData = await res.json();
+      toast('Erreur : ' + (errorData.message || 'Erreur côté serveur'));
       hideLoading();
-      toast('Erreur côté serveur');
       return;
     }
 

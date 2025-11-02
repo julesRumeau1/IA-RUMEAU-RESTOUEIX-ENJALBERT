@@ -2,6 +2,7 @@ package api;
 
 import api.dto.ErrorResponse;
 import api.dto.PreferencesRequest;
+import api.util.ApiException;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import io.javalin.http.Context;
@@ -71,9 +72,17 @@ public final class PreferencesApi {
             ctx.status(HttpStatus.BAD_REQUEST)
                     .json(new ErrorResponse("invalid_json", e.getOriginalMessage()));
 
+        } catch (ApiException e) {
+            // Erreur métier personnalisée
+            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .json(new ErrorResponse(e.getCode(), e.getMessage()));
+
         } catch (Exception e) {
             ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .json(new ErrorResponse("server_error", e.getMessage()));
+                    .json(new ErrorResponse(
+                            "server_error",
+                            "Erreur interne du serveur"
+                    ));
         }
     }
 }
