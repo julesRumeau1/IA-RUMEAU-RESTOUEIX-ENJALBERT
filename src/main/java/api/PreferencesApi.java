@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import io.javalin.http.staticfiles.Location;
 import model.News;
 import model.NewsCategoryScore;
 import model.NewsCollection;
@@ -94,11 +96,24 @@ public final class PreferencesApi {
      *
      * @param args arguments
      */
+    /**
+     * Démarre le serveur API (est appelé depuis la classe main.Main à la
+     * racine).
+     *
+     * @param args arguments
+     */
     public static void main(final String[] args) {
         final int port = 8080;
         Javalin app = Javalin.create(cfg -> {
                     cfg.http.defaultContentType = "application/json";
                     cfg.plugins.enableDevLogging();
+
+                    cfg.staticFiles.add(staticFiles -> {
+                        staticFiles.hostedPath = "/";
+                        staticFiles.directory = "/public";
+                        staticFiles.location = Location.CLASSPATH;
+                    });
+
                 })
                 .start(port);
 
@@ -114,8 +129,8 @@ public final class PreferencesApi {
 
         app.get("/health", ctx -> ctx.result("ok"));
 
-        LOGGER.info(() -> "API: http://localhost:"
-                + port + "/api/preferences");
+        LOGGER.info(() -> "API et Interface web démarrées: http://localhost:"
+                + port);
     }
 
     /**
