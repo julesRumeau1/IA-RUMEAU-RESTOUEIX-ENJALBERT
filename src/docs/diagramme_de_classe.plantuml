@@ -1,0 +1,96 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide empty methods
+
+package api {
+  class PreferencesApi {
+    - LLM_BATCH_SIZE : int
+    - LLM_TIMEOUT_MINUTES : int
+    - HTTP_NO_CONTENT : int
+    - MAX_LLM_SCORE : int
+    - NO_CATEGORY_SCORE : int
+    - NO_MATCH_SCORE : int
+    - OLLAMAURL : String
+  }
+}
+
+package api.dto {
+  class ErrorResponse {
+    - code : String
+    - message : String
+  }
+
+  class PreferencesRequest {
+    - themes : Themes
+  }
+
+  class Themes {
+    - politique : ThemeSelection
+    - international : ThemeSelection
+    - economie : ThemeSelection
+    - societe : ThemeSelection
+    - sport : ThemeSelection
+    - culture : ThemeSelection
+    - planete : ThemeSelection
+    - science : ThemeSelection
+    - pixels : ThemeSelection
+    - sante : ThemeSelection
+    - education : ThemeSelection
+    - idees : ThemeSelection
+  }
+
+  class ThemeSelection {
+    - level : int
+    - rss : String
+  }
+}
+
+package api.util {
+  class CorsUtil { }
+  class PreferencesUtils { }
+}
+
+package main {
+  class Main { }
+}
+
+package model {
+  class News {
+    - title : String
+    - link : String
+    - description : String
+    - categoryScores : List
+  }
+
+  class NewsCategoryScore {
+    - category : String
+    - score : int
+  }
+
+  class NewsCollection {
+    - newsCollection : List
+  }
+}
+
+package rss {
+  class LeMondeRSSFetcher {
+    - RSS_URL : String
+    - CDATA_PREFIX_LEN : int
+    - CDATA_SUFFIX_LEN : int
+  }
+}
+
+News --> "*" NewsCategoryScore
+NewsCollection --> "*" News
+PreferencesRequest --> Themes
+Themes --> "*" ThemeSelection
+PreferencesApi --> CorsUtil
+PreferencesApi --> PreferencesRequest
+PreferencesApi --> PreferencesUtils
+PreferencesApi --> NewsCollection
+PreferencesApi --> News
+PreferencesApi --> NewsCategoryScore
+PreferencesApi --> LeMondeRSSFetcher
+Main ..> PreferencesApi : démarre l'API
+
+@enduml

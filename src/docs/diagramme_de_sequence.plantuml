@@ -1,0 +1,31 @@
+@startuml
+actor Client as C
+
+participant "PreferencesApi" as Api
+participant "PreferencesUtils" as PrefUtils
+participant "LeMondeRSSFetcher" as Rss
+participant "NewsCollection" as NewsCol
+participant "LLM / service de scoring" as LLM
+
+C -> Api : GET /preferences/news
+activate Api
+
+Api -> PrefUtils : chargerPréférences(client)
+PrefUtils --> Api : PreferencesRequest
+
+Api -> Rss : fetchRss()
+activate Rss
+Rss --> Api : liste de News (brutes)
+deactivate Rss
+
+Api -> LLM : scorer(news, préférences)
+activate LLM
+LLM --> Api : liste de NewsCategoryScore
+deactivate LLM
+
+Api -> NewsCol : new NewsCollection(news + scores)
+Api <- NewsCol : collection
+
+Api --> C : 200 OK + JSON (news filtrées)
+deactivate Api
+@enduml
