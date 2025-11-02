@@ -190,23 +190,42 @@ function pickTone(categoryScores){
 }
 
 // ==================== Fenêtre de résultats ====================
-function openResults(news){
+function openResults(news, opts = {}) {
   const body = document.getElementById('resultsBody');
   body.innerHTML = '';
+
+  const items = Array.isArray(news) ? news : [];
+  const emptyMessage = opts.emptyMessage || 'Aucun article ne correspond à vos préférences.';
+  const emptyHint = opts.emptyHint || 'Essayez d’augmenter le niveau d’un autre thème ou de revenir à des valeurs plus générales.';
+
+  if (!items.length) {
+    const box = document.createElement('div');
+    box.className = 'empty-state';
+    box.innerHTML = `
+      <h3 style="margin-bottom:8px">Aucun résultat</h3>
+      <p style="margin-bottom:4px">${emptyMessage}</p>
+      <p style="font-size:.85rem; opacity:.7">${emptyHint}</p>
+    `;
+    body.appendChild(box);
+    document.getElementById('results').showModal();
+    return;
+  }
 
   const list = document.createElement('div');
   list.className = 'news-list';
 
-  news.forEach(item => {
+  items.forEach(item => {
     const card = document.createElement('article');
     card.className = 'news-card';
 
     const title = document.createElement('h3');
     title.className = 'news-title';
 
-    if(item.link && item.link !== '#'){
+    if (item.link && item.link !== '#') {
       const a = document.createElement('a');
-      a.href = item.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.href = item.link;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       a.textContent = item.title;
       a.className = 'link';
       title.appendChild(a);
@@ -239,37 +258,37 @@ function openResults(news){
   document.getElementById('results').showModal();
 }
 
+
 // ==================== Appel API (réel, sans mock) ====================
 document.getElementById('fetchBtn').addEventListener('click', async () => {
   const payload = getPayloadTyped();
   out.textContent = '';
   showLoading('Analyse de vos préférences…');
 
-  try{
+  try {
     const res = await fetch('/api/preferences', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if(!res.ok){
-      const errorData = await res.json();
-      toast('Erreur : ' + (errorData.message || 'Erreur côté serveur'));
-      hideLoading();
-      return;
-    }
+    //if (!res.ok) {
+    //  const errorData = await res.json();
+    //  toast('Erreur : ' + (errorData.message || 'Erreur côté serveur'));
+    //  hideLoading();
+    //  return;
+    //}
 
-    // On attend un JSON { newsCollection: [...] }
     const data = await res.json();
     const news = normalizeNews(data);
 
     hideLoading();
-    if(!news.length){
-      toast('Pas d’articles trouvés pour ces préférences');
-      return;
-    }
-    openResults(news);
 
-  } catch (e){
+    openResults(news, {
+      emptyMessage: 'Pas d’articles trouvés pour ces préférences.',
+      emptyHint: 'Essayez d’augmenter un autre thème ou de baisser vos filtres.'
+    });
+
+  } catch (e) {
     console.error(e);
     hideLoading();
     toast('Impossible de contacter l’API locale');
