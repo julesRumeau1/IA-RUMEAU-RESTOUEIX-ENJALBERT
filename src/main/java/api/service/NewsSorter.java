@@ -1,6 +1,7 @@
 package api.service;
 
 import api.PreferencesApi;
+import api.util.ApiException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,14 +49,34 @@ public class NewsSorter {
     public static List<News> sortByPreferences(
             NewsCollection newsCollection,
             Map<String, Integer> userPreferences
-    ) {
-        List<News> allNews = newsCollection.getNewsCollection();
+    ) throws ApiException {
 
-        allNews.sort((news1, news2) -> {
-            int score1 = calculateMatchScore(news1, userPreferences);
-            int score2 = calculateMatchScore(news2, userPreferences);
-            return Integer.compare(score2, score1);
-        });
+        if (newsCollection == null || userPreferences == null) {
+            throw new ApiException(
+                    "invalid_sort_input",
+                    "La collection de news ou les préférences utilisateur sont nulles"
+            );
+        }
+
+        List<News> allNews = newsCollection.getNewsCollection();
+        if (allNews.isEmpty()) {
+            throw new ApiException(
+                    "empty_news_collection",
+                    "La collection de news est vide, impossible de trier"
+            );
+        }
+        try {
+            allNews.sort((news1, news2) -> {
+                int score1 = calculateMatchScore(news1, userPreferences);
+                int score2 = calculateMatchScore(news2, userPreferences);
+                return Integer.compare(score2, score1);
+            });
+        } catch (Exception ex) {
+            throw new ApiException(
+                    "sorting_failed",
+                    "Échec du tri des articles : " + ex.getMessage()
+            );
+        }
 
         LOGGER.info("--- Tri final des articles par score ---");
         StringBuilder sortedLog = new StringBuilder();
@@ -75,6 +96,13 @@ public class NewsSorter {
             if (calculateMatchScore(news, userPreferences) >= 0) {
                 filteredNews.add(news);
             }
+        }
+
+        if (filteredNews.isEmpty()) {
+            throw new ApiException(
+                    "no_matching_news",
+                    "Aucun article ne correspond aux préférences utilisateur"
+            );
         }
 
         return filteredNews;
