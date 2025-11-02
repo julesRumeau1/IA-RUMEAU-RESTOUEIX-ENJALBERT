@@ -74,7 +74,7 @@ public final class LeMondeRSSFetcher implements RssFetcher {
      * @param tag  nom du tag
      * @return le contenu du tag, ou chaîne vide si absent
      */
-    private static String extractTagContent(final String text,
+    public static String extractTagContent(final String text,
                                             final String tag) {
         String openTag = "<" + tag + ">";
         String closeTag = "</" + tag + ">";
