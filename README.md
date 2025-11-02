@@ -59,7 +59,7 @@ src/
 
 ## 🧰 Technologies utilisées
 - **Langage principal :** Java
-- **Backend IA :** Ollama (`qwen2.5-3b`)
+- **Backend IA :** Ollama (`qwen2.5:3b`)
 - **Parsing RSS :** Rome (ou équivalent)
 - **JSON :** Gson / Jackson
 - **Tests :** JUnit
@@ -70,7 +70,7 @@ src/
 ## ⚙️ Installation et exécution
 ### 1) Prérequis
 - Java 17+
-- [Ollama](https://ollama.com) installé et lancé localement
+- Docker avec docker compose
 
 ### 2) Cloner le dépôt
 ```bash
@@ -78,17 +78,16 @@ git clone https://github.com/julesRumeau1/IA-RUMEAU-RESTOUEIX-ENJALBERT.git
 cd IA-RUMEAU-RESTOUEIX-ENJALBERT
 ```
 
-### 3) Télécharger le modèle et lancer ollama
+### 3) Télécharger le modèle, lancer ollama et lancer l'application
 ```bash
-cd src
-sudo docker-compose up -d
+
+1ère utilisation :
+sudo docker compose up --build
+
+Après :
+sudo docker compose up -d
 ```
 
-### 4) Compiler et exécuter (exemple)
-```bash
-javac -d bin src/java/main/Main.java
-java -cp bin main.Main
-```
 
 ---
 

@@ -246,7 +246,7 @@ document.getElementById('fetchBtn').addEventListener('click', async () => {
   showLoading('Analyse de vos préférences…');
 
   try{
-    const res = await fetch('http://localhost:8080/api/preferences', {
+    const res = await fetch('/api/preferences', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(payload)
