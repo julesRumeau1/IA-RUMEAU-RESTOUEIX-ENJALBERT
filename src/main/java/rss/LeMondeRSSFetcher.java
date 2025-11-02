@@ -14,7 +14,9 @@ import java.util.Map;
 /**
  * Utilitaire pour récupérer le flux RSS du Monde.
  */
-public final class LeMondeRSSFetcher {
+public final class LeMondeRSSFetcher implements RssFetcher {
+
+    public static final LeMondeRSSFetcher INSTANCE = new LeMondeRSSFetcher();
 
     /** URL du flux RSS du Monde. */
     private static final String RSS_URL = "https://www.lemonde.fr/rss/une.xml";
@@ -25,7 +27,7 @@ public final class LeMondeRSSFetcher {
     /** Longueur du suffixe ] ] >. */
     private static final int CDATA_SUFFIX_LEN = 3;
 
-    private LeMondeRSSFetcher() {
+    public LeMondeRSSFetcher() {
         // utilitaire
     }
 
@@ -34,7 +36,8 @@ public final class LeMondeRSSFetcher {
      *
      * @return une liste de maps (title, link, description, category)
      */
-    public static List<Map<String, String>> fetchRawNews() {
+    @Override
+    public List<Map<String, String>> fetchRawNews() {
         List<Map<String, String>> newsList = new ArrayList<>();
 
         try {
