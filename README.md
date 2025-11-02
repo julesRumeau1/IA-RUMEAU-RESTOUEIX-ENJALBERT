@@ -41,14 +41,14 @@ src/
 │  │  │  ├─ NewsCategoryScore.java
 │  │  │  ├─ NewsCollection.java
 │  │  │  └─ package-info.java
-│  │  ├─ rss/
-│  │  │  ├─ LeMondeRSSFetcher.java
-│  │  │  └─ package-info.java
-│  │  └─ ui/
+│  │  └─ rss/
+│  │     ├─ LeMondeRSSFetcher.java
+│  │     └─ package-info.java
+│  ├─ resources/
+│  │  └─ public/
 │  │     ├─ index.html
 │  │     ├─ script.js
 │  │     └─ style.css
-│  ├─ resources/
 │  └─ test/
 └─ docs/
 
