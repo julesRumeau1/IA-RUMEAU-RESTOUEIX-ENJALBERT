@@ -1,96 +1,123 @@
 @startuml
+title Diagramme de classes — Agrégateur d'actualités
+
+skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
-hide empty methods
 
-package api {
+package "api" {
   class PreferencesApi {
-    - LLM_BATCH_SIZE : int
-    - LLM_TIMEOUT_MINUTES : int
-    - HTTP_NO_CONTENT : int
-    - MAX_LLM_SCORE : int
-    - NO_CATEGORY_SCORE : int
-    - NO_MATCH_SCORE : int
-    - OLLAMAURL : String
+    +getThemes(): Themes
+    +postPreferences(req: PreferencesRequest): ThemeSelection
+    +getNews(): List<News>
+  }
+
+  package "api.dto" {
+    class ErrorResponse {
+      -message: String
+      -code: int
+    }
+    class PreferencesRequest {
+      +userId: String
+      +preferredThemes: List<String>
+    }
+    class ThemeSelection {
+      +selected: List<String>
+    }
+    class Themes {
+      +available: List<String>
+    }
+  }
+
+  package "api.service" {
+    class NewsService {
+      +getNewsForUser(userId: String): NewsCollection
+      +getNewsForThemes(themes: List<String>): NewsCollection
+    }
+    class NewsCollectionFactory {
+      +fromSources(sources: List<RssFetcher>, themes: List<String>): NewsCollection
+    }
+    class NewsSorter {
+      +sort(col: NewsCollection): NewsCollection
+    }
+    class LLMScorer {
+      +score(news: List<News>, themes: List<String>): List<NewsCategoryScore>
+    }
+  }
+
+  package "api.util" {
+    class ApiException {
+      +status: int
+      +message: String
+    }
+    class CorsUtil {
+      +apply()
+    }
+    class PreferencesUtils {
+      +resolveThemes(req: PreferencesRequest): List<String>
+    }
   }
 }
 
-package api.dto {
-  class ErrorResponse {
-    - code : String
-    - message : String
-  }
-
-  class PreferencesRequest {
-    - themes : Themes
-  }
-
-  class Themes {
-    - politique : ThemeSelection
-    - international : ThemeSelection
-    - economie : ThemeSelection
-    - societe : ThemeSelection
-    - sport : ThemeSelection
-    - culture : ThemeSelection
-    - planete : ThemeSelection
-    - science : ThemeSelection
-    - pixels : ThemeSelection
-    - sante : ThemeSelection
-    - education : ThemeSelection
-    - idees : ThemeSelection
-  }
-
-  class ThemeSelection {
-    - level : int
-    - rss : String
-  }
-}
-
-package api.util {
-  class CorsUtil { }
-  class PreferencesUtils { }
-}
-
-package main {
-  class Main { }
-}
-
-package model {
+package "model" {
   class News {
-    - title : String
-    - link : String
-    - description : String
-    - categoryScores : List
+    +id: String
+    +title: String
+    +summary: String
+    +url: String
+    +source: String
+    +publishedAt: Instant
+    +scores: Map<String, Double>
   }
-
-  class NewsCategoryScore {
-    - category : String
-    - score : int
-  }
-
   class NewsCollection {
-    - newsCollection : List
+    +items: List<News>
+    +add(n: News)
+    +byTheme(theme: String): List<News>
+  }
+  class NewsCategoryScore {
+    +newsId: String
+    +category: String
+    +score: double
   }
 }
 
-package rss {
-  class LeMondeRSSFetcher {
-    - RSS_URL : String
-    - CDATA_PREFIX_LEN : int
-    - CDATA_SUFFIX_LEN : int
+package "rss" {
+  abstract class RssFetcher {
+    +name: String
+    +fetch(): List<News>
+  }
+  class LeMondeRSSFetcher extends RssFetcher
+  ' Ajoutez d'autres fetchers ici si besoin
+}
+
+package "main" {
+  class Main {
+    +main(args: String[]): void
   }
 }
 
-News --> "*" NewsCategoryScore
-NewsCollection --> "*" News
-PreferencesRequest --> Themes
-Themes --> "*" ThemeSelection
-PreferencesApi --> CorsUtil
+' Relations
+PreferencesApi --> NewsService : utilise
 PreferencesApi --> PreferencesRequest
-PreferencesApi --> PreferencesUtils
-PreferencesApi --> NewsCollection
-PreferencesApi --> News
-PreferencesApi --> NewsCategoryScore
-PreferencesApi --> LeMondeRSSFetcher
-Main ..> PreferencesApi : démarre l'API
+PreferencesApi --> ThemeSelection
+PreferencesApi --> Themes
+PreferencesApi ..> ErrorResponse : erreurs
+
+NewsService --> NewsCollectionFactory : compose
+NewsService --> NewsSorter : trie
+NewsService --> LLMScorer : score
+NewsCollectionFactory --> RssFetcher : collecte
+NewsCollectionFactory --> NewsCollection : construit
+
+LLMScorer --> NewsCategoryScore
+NewsCollection o-- "1..*" News
+News --> "0..*" NewsCategoryScore : agrège
+
+Main --> PreferencesApi : bootstrap
+
+RssFetcher <|-- LeMondeRSSFetcher
+
+ApiException <.. PreferencesApi
+CorsUtil <.. PreferencesApi
+PreferencesUtils <.. PreferencesApi
 
 @enduml
