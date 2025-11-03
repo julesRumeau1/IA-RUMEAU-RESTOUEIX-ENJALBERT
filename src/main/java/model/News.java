@@ -1,6 +1,7 @@
 package model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -102,7 +103,11 @@ public final class News {
      * @return la liste des scores de catégorie
      */
     public List<NewsCategoryScore> getCategoryScores() {
-        return categoryScores;
+        if (this.categoryScores == null) {
+            return null;
+        }
+        // Retourne une copie de la liste.
+        return new ArrayList<>(this.categoryScores);
     }
 
     /**
@@ -112,7 +117,12 @@ public final class News {
      */
     public void setCategoryScores(final List<NewsCategoryScore>
                                           newCategoryScores) {
-        this.categoryScores = newCategoryScores;
+        if (newCategoryScores == null) {
+            this.categoryScores = null;
+        } else {
+            // Crée une copie.
+            this.categoryScores = new ArrayList<>(newCategoryScores);
+        }
     }
 
     /**

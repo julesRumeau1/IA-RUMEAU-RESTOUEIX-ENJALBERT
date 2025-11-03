@@ -25,7 +25,12 @@ public final class NewsCollection {
      * @param initialNewsCollection liste de news initiale
      */
     public NewsCollection(final List<News> initialNewsCollection) {
-        this.newsCollection = initialNewsCollection;
+        if (initialNewsCollection == null) {
+            this.newsCollection = new ArrayList<>();
+        } else {
+            // Crée une copie
+            this.newsCollection = new ArrayList<>(initialNewsCollection);
+        }
     }
 
     /**
@@ -52,7 +57,9 @@ public final class NewsCollection {
      * @return la liste des news
      */
     public List<News> getNewsCollection() {
-        return newsCollection;
+        // Retourne une COPIE de la liste interne.
+        // L'appelant peut modifier cette copie sans affecter l'originale.
+        return new ArrayList<>(this.newsCollection);
     }
 
     /**

@@ -13,6 +13,7 @@ import model.News;
 import model.NewsCategoryScore;
 import model.NewsCollection;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -213,7 +214,7 @@ public class LLMScorer {
                     categorizedNewsList.add(newsItem);
                 }
 
-            } catch (Exception ex) {
+            } catch (IOException | RuntimeException ex) {
                 throw new ApiException("llm_batch_failed", "Échec de catégorisation par le LLM : " + ex.getMessage());
             }
         }
