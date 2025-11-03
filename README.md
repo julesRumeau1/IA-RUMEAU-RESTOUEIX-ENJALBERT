@@ -1,58 +1,64 @@
-# 🧠 NewsSummarizer Agent
+# 🧠 NewsSorter Agent
 
 ## 📌 Objectif du projet
-Concevoir un **agent intelligent** qui récupère des **actualités** via des **flux RSS**, filtre selon les **préférences utilisateur** (politique, sport, tech, etc.), puis **résume** les articles pertinents en s’appuyant sur **Ollama** (modèle **qwen2.5:7b**) pour l’inférence locale.
+Concevoir un **agent intelligent** qui récupère des **actualités** via des **flux RSS**, filtre selon les **préférences utilisateur** (politique, sport, tech, etc.) sur **Ollama** (modèle **qwen2.5:7b**) pour l’inférence locale.
 
 ---
 
 ## 🚀 Fonctionnalités
 - Récupération multi-flux RSS
 - Filtrage par thèmes et préférences
-- Résumés concis générés via Qwen2.5 3b (Ollama)
 - Interface web
-- Sauvegarde locale des préférences
 - Journalisation et gestion d’erreurs robuste
 
 ---
 
 ## 🏗️ Architecture
 ```text
-src/
-├─ main/
-│  ├─ java/
-│  │  ├─ api/
-│  │  │  ├─ dto/
-│  │  │  │  ├─ ErrorResponse.java
-│  │  │  │  ├─ PreferencesRequest.java
-│  │  │  │  ├─ Themes.java
-│  │  │  │  ├─ ThemeSelection.java
-│  │  │  │  └─ package-info.java
-│  │  │  ├─ util/
-│  │  │  │  ├─ CorsUtil.java
-│  │  │  │  ├─ PreferencesUtils.java
-│  │  │  │  └─ package-info.java
-│  │  │  ├─ PreferencesApi.java
-│  │  │  └─ package-info.java
-│  │  ├─ main/
-│  │  │  ├─ Main.java
-│  │  │  └─ package-info.java
-│  │  ├─ model/
-│  │  │  ├─ News.java
-│  │  │  ├─ NewsCategoryScore.java
-│  │  │  ├─ NewsCollection.java
-│  │  │  └─ package-info.java
-│  │  └─ rss/
-│  │     ├─ LeMondeRSSFetcher.java
-│  │     └─ package-info.java
-│  ├─ resources/
-│  │  └─ public/
-│  │     ├─ index.html
-│  │     ├─ script.js
-│  │     └─ style.css
-│  └─ test/
-└─ docs/
-
-└─ README.md
+.
+└── src
+    ├── docs
+    │   ├── UserManual.md
+    │   ├── diagramme_de_classe.(plantuml|png)
+    │   └── diagramme_de_sequence.(plantuml|png)
+    ├── main
+    │   ├── java
+    │   │   ├── api
+    │   │   │   ├── PreferencesApi.java           
+    │   │   │   ├── dto/                         
+    │   │   │   │   ├── ErrorResponse.java
+    │   │   │   │   ├── PreferencesRequest.java
+    │   │   │   │   ├── ThemeSelection.java
+    │   │   │   │   └── Themes.java
+    │   │   │   ├── service/                    
+    │   │   │   │   ├── LLMScorer.java
+    │   │   │   │   ├── NewsCollectionFactory.java
+    │   │   │   │   ├── NewsService.java
+    │   │   │   │   └── NewsSorter.java
+    │   │   │   └── util/                       
+    │   │   │       ├── ApiException.java
+    │   │   │       ├── CorsUtil.java
+    │   │   │       └── PreferencesUtils.java
+    │   │   ├── model/                        
+    │   │   │   ├── News.java
+    │   │   │   ├── NewsCategoryScore.java
+    │   │   │   └── NewsCollection.java
+    │   │   ├── rss/                             
+    │   │   │   ├── RssFetcher.java
+    │   │   │   └── LeMondeRSSFetcher.java
+    │   │   └── main/                            
+    │   │       └── Main.java
+    │   └── resources
+    │       ├── logback.xml                     
+    │       └── public/                           
+    │           ├── index.html
+    │           ├── script.js
+    │           └── style.css
+    └── test
+        └── java
+            ├── api/dto/*Test.java
+            ├── model/*Test.java
+            └── rss/*Test.java
 ```
 
 ---
@@ -60,9 +66,8 @@ src/
 ## 🧰 Technologies utilisées
 - **Langage principal :** Java
 - **Backend IA :** Ollama (`qwen2.5:7b`)
-- **Parsing RSS :** Rome (ou équivalent)
 - **JSON :** Gson / Jackson
-- **Tests :** JUnit
+- **Tests :** JUnit5
 - **Versionning :** Git + GitHub
 
 ---
@@ -94,22 +99,8 @@ sudo docker compose up -d
 ## 🧠 Utilisation (flux simple)
 1. Lancer l’application.
 2. Renseigner vos thèmes d’intérêt sur l'interface web (ex. `politique`, `sport`, `économie`).
-3. L’agent récupère les flux RSS, filtre et résume via Qwen2.5 3b.
+3. L’agent récupère les flux RSS, filtre et résume via Qwen2.5 7b.
 4. Ajuster les préférences à tout moment.
-
----
-
-
----
-
-## 💡 Exemple d’appel Ollama
-```json
-{
-  "model": "qwen2.5:7b",
-  "prompt": "Résume en 3 phrases les actualités du jour sur le thème 'politique'.",
-  "stream": false
-}
-```
 
 ---
 
@@ -117,7 +108,7 @@ sudo docker compose up -d
 - Modulariser le code (séparation agent / API / UI)
 - Gestion d’erreurs et validations (programmation défensive)
 - Commits réguliers, branches par fonctionnalité, pull request GitHub
-- Tests unitaires sur les parties critiques (parsing, filtrage)
+- Tests unitaires
 
 ---
 

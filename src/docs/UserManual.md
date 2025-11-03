@@ -10,7 +10,7 @@ En fonction des **préférences** que vous définissez (votre intérêt pour la 
 
 ## 2. Lancement de l'application (Prérequis)
 
-La première chose a avoir un JDK installé dans une version supérieur a 17 et un version de docker comprenant docker compose.
+La première chose à avoir est un JDK installé dans une version supérieur a 17 et une version de docker comprenant docker compose.
 
 1.  Ouvrez un terminal sur votre machine.
 2.  Naviguez jusqu'au dossier racine du projet (là où se trouve le fichier `docker-compose.yml`).
@@ -36,11 +36,11 @@ L'écran principal affiche 12 thèmes d'actualité. Pour chacun, vous disposez d
 
 Utilisez ces curseurs pour indiquer votre niveau d'intérêt. Voici ce que signifient les niveaux :
 
-* **Niveau 5 (Très important) :** Donne un poids positif **très élevé** (+5) aux articles de ce thème.
-* **Niveau 4 (Important) :** Donne un poids positif **élevé** (+3).
-* **Niveau 3 (Neutre) :** Donne un petit poids positif (+1).
-* **Niveau 2 (Peu d'intérêt) :** Donne un poids **négatif** (-1).
-* **Niveau 1 (Pas d'intérêt) :** Donne un poids **très négatif** (-5).
+* **Niveau 5 (Très important) :** Donne un poids positif **très élevé** aux articles de ce thème.
+* **Niveau 4 (Important) :** Donne un poids positif **élevé**.
+* **Niveau 3 (Neutre) :** Donne un petit poids positif.
+* **Niveau 2 (Peu d'intérêt) :** Donne un poids **négatif**.
+* **Niveau 1 (Pas d'intérêt) :** Donne un poids **très négatif**.
 
 > **💡 Astuce :** Mettre un thème à 1 ou 2 va activement **filtrer et cacher** les articles de ce thème. Mettre un thème à 4 ou 5 les fera **remonter en priorité**.
 
@@ -49,12 +49,7 @@ Utilisez ces curseurs pour indiquer votre niveau d'intérêt. Voici ce que signi
 Une fois vos préférences réglées, cliquez sur le bouton principal :
 **⚡ Récupérer les actualités**
 
-Un indicateur de chargement apparaîtra. Pendant ce temps, l'agent effectue les actions suivantes en arrière-plan :
-
-1.  Il récupère le dernier flux RSS "À la une" du Monde (`LeMondeRSSFetcher.java`).
-2.  Il envoie les articles au modèle IA `qwen2.5:7b` pour qu'ils soient évalués et catégorisés selon les 12 thèmes (`PreferencesApi.java`).
-3.  Il calcule un "score de pertinence" pour chaque article en comparant les catégories trouvées par l'IA avec les poids que vous avez définis.
-4.  Il trie la liste finale et ne conserve que les articles ayant un score positif.
+Un indicateur de chargement apparaîtra.
 
 #### Étape 3 : Consulter les résultats
 
@@ -66,7 +61,6 @@ Vous y verrez la liste des articles triés pour vous. Pour chaque article, l'int
 * **Le résumé :** La description issue du flux RSS.
 * **Les badges :**
     * **Thème :** Le thème principal détecté par l'IA (ex: `Politique`, `Sport`).
-    * **Tonalité :** La tonalité de l'article (ex: `POSITIVE`, `NEGATIVE`, `NEUTRAL`) également détectée par l'IA (`script.js`).
 
 ## 4. Outils additionnels
 
@@ -82,4 +76,4 @@ L'interface propose quelques outils pour vous faciliter la vie :
 Lorsque vous avez terminé, vous pouvez arrêter tous les services (l'application Java et Ollama) en retournant dans votre terminal et en exécutant :
 
 ```bash
-sudo docker compose down
+sudo docker compose down --remove-orphans
