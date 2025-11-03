@@ -45,7 +45,7 @@ public final class LLMScorer {
     /** URL vers le conteneur Ollama. */
     private static final String OLLAMA_URL =
             System.getenv()
-                .getOrDefault("OLLAMA_HOST", "http://localhost:11434");
+                    .getOrDefault("OLLAMA_HOST", "http://localhost:11434");
 
     /** Mapper JSON configuré. */
     private static final ObjectMapper MAPPER = new ObjectMapper()
@@ -208,7 +208,8 @@ public final class LLMScorer {
           TA TÂCHE: Évaluer les articles suivants et retourner une map JSON.
 
           RÈGLES:
-          1.  Scores: 0 (pas lié), 1 (un peu lié), 2 (lié), 3 (bien lié), 4 (très lié).
+          1.  Scores: 0 (pas lié), 1 (un peu lié), 2 (lié),
+           3 (bien lié), 4 (très lié).
           2.  Ordre des catégories: Tu DOIS respecter cet ordre EXACT de %d
               thèmes: %s
           3.  Format: Réponds UNIQUEMENT avec la map JSON. Pas de texte, pas
@@ -221,13 +222,13 @@ public final class LLMScorer {
                                           scores):
           {
             "1": [x, x, x, x, x, x, x, x, x, x, x, x],
-            "2": [x, x, x, x, x, x, x, x, x, x, x, x],
+            "2": [x, xx, x, x, x, x, x, x, x, x, x, x],
             "3": [x, x, x, x, x, x, x, x, x, x, x, x],
           }
           """;
 
         return String.format(promptTemplate, orderedCategories.size(),
-                categoryListPrompt,articlesPrompt,
+                categoryListPrompt, articlesPrompt,
                 orderedCategories.size());
     }
 
@@ -304,10 +305,10 @@ public final class LLMScorer {
             List<NewsCategoryScore> categoryScores = new ArrayList<>();
             for (int i = 0; i < orderedCategories.size(); i++) {
                 int score =
-                    Math.max(0, Math.min(scores.get(i), MAX_LLM_SCORE));
+                        Math.max(0, Math.min(scores.get(i), MAX_LLM_SCORE));
                 if (score > 0) {
                     categoryScores.add(new NewsCategoryScore(
-                    orderedCategories.get(i), score));
+                            orderedCategories.get(i), score));
                 }
             }
             news.setCategoryScores(categoryScores);
