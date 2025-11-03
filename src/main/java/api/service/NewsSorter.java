@@ -2,26 +2,18 @@ package api.service;
 
 import api.PreferencesApi;
 import api.util.ApiException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.ollama.OllamaChatModel;
 import model.News;
 import model.NewsCategoryScore;
 import model.NewsCollection;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class NewsSorter {
+final class NewsSorter {
 
-    private NewsSorter () {
+    private NewsSorter() {
         // utilitaire
     }
 
@@ -46,15 +38,39 @@ public class NewsSorter {
     );
 
 
+    /**
+     * Trie une collection de news en fonction des préférences utilisateur.
+     * <p>
+     * Chaque article reçoit un score calculé via
+     * {@link #calculateMatchScore(News, Map)},
+     * et la liste est triée par ordre décroissant de score. Les articles
+     * dont le score
+     * est inférieur à 0 sont filtrés. Les logs détaillent le score final
+     * de chaque article.
+     * </p>
+     *
+     * @param newsCollection   la collection de news à trier ; ne peut pas
+     *                         être {@code null}
+     * @param userPreferences  map des préférences utilisateur
+     *                         (nom de catégorie -> poids) ;
+     *                         ne peut pas être {@code null}
+     * @return une liste de {@link News} triée par score de correspondance
+     * avec les préférences utilisateur
+     * @throws ApiException si la collection de news ou les préférences
+     * sont nulles, si la collection est vide,
+     *                      si le tri échoue, ou si aucun article ne
+     *                      correspond aux préférences
+     */
     public static List<News> sortByPreferences(
-            NewsCollection newsCollection,
-            Map<String, Integer> userPreferences
+            final NewsCollection newsCollection,
+            final Map<String, Integer> userPreferences
     ) throws ApiException {
 
         if (newsCollection == null || userPreferences == null) {
             throw new ApiException(
                     "invalid_sort_input",
-                    "La collection de news ou les préférences utilisateur sont nulles"
+                    "La collection de news ou les préférences"
+                            + " utilisateur sont nulles"
             );
         }
 
@@ -100,8 +116,8 @@ public class NewsSorter {
 
         if (filteredNews.isEmpty()) {
             throw new ApiException(
-                    "no_matching_news",
-                    "Aucun article ne correspond aux préférences utilisateur"
+                "no_matching_news",
+                "Aucun article ne correspond aux préférences utilisateur"
             );
         }
 

@@ -16,6 +16,7 @@ import java.util.Map;
  */
 public final class LeMondeRSSFetcher implements RssFetcher {
 
+    /** Instance unique (singleton) du fetcher RSS du Monde. */
     public static final LeMondeRSSFetcher INSTANCE = new LeMondeRSSFetcher();
 
     /** URL du flux RSS du Monde. */
@@ -27,6 +28,7 @@ public final class LeMondeRSSFetcher implements RssFetcher {
     /** Longueur du suffixe ] ] >. */
     private static final int CDATA_SUFFIX_LEN = 3;
 
+    /** Constructeur par défaut privé pour empêcher l’instanciation externe. */
     public LeMondeRSSFetcher() {
         // utilitaire
     }
