@@ -220,11 +220,11 @@ public final class LLMScorer {
 
           FORMAT DE RÉPONSE JSON ATTENDU (Map<String, List<Integer>> avec %d
                                           scores):
-          {
-            "1": [x, x, x, x, x, x, x, x, x, x, x, x],
-            "2": [x, xx, x, x, x, x, x, x, x, x, x, x],
-            "3": [x, x, x, x, x, x, x, x, x, x, x, x],
-          }
+            {
+                "1": [x, x, x, x, x, x, x, x, x, x, x, x],
+                "2": [x, x, x, x, x, x, x, x, x, x, x, x],
+                "3": [x, x, x, x, x, x, x, x, x, x, x, x],
+              }
           """;
 
         return String.format(promptTemplate, orderedCategories.size(),
