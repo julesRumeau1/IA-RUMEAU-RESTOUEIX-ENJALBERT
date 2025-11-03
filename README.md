@@ -134,8 +134,6 @@ sudo docker compose up -d
 - Code source et historique Git propre
 - README et guide utilisateur
 - Diagrammes UML (`docs/`)
-- Présentation de soutenance
-
 ---
 
 ## 🧾 Licence

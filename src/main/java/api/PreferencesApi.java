@@ -37,13 +37,16 @@ public final class PreferencesApi {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .registerModule(new JavaTimeModule());
 
+    /**
+     * Logger.
+     */
     private static final Logger LOGGER =
             Logger.getLogger(Main.class.getName());
 
     /**
      * Initialisation du fetcher.
      */
-    private static final RssFetcher rssFetcher = LeMondeRSSFetcher.INSTANCE;
+    private static final RssFetcher RSS_FETCHER = LeMondeRSSFetcher.INSTANCE;
 
     /**
      * time out du llm.
@@ -53,7 +56,7 @@ public final class PreferencesApi {
     /**
      * Initialisation du LLM.
      */
-    private static final ChatLanguageModel llm = OllamaChatModel.builder()
+    private static final ChatLanguageModel LLM = OllamaChatModel.builder()
             .baseUrl(System.getenv().getOrDefault(
                     "OLLAMA_HOST",
                     "http://localhost:11434"
@@ -66,8 +69,8 @@ public final class PreferencesApi {
      * Service qui contient toute la logique métier.
      */
     private static final NewsService NEWS_SERVICE = new NewsService(
-            rssFetcher,
-            llm
+            RSS_FETCHER,
+            LLM
     );
 
     private PreferencesApi() {
