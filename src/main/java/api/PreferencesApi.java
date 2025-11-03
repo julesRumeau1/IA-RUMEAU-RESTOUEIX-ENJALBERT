@@ -27,24 +27,43 @@ import java.util.List;
  */
 public final class PreferencesApi {
 
-    // Mapper JSON configuré
+    /**
+     * Mapper JSON configuré.
+     */
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .registerModule(new JavaTimeModule());
 
-    // Initialisation du fetcher
+    /**
+     * Initialisation du fetcher.
+     */
     private static final RssFetcher rssFetcher = LeMondeRSSFetcher.INSTANCE;
 
-    // Initialisation du LLM
+    /**
+     * time out du llm.
+     */
+    private static final int LLM_TIMEOUT_MINUTES = 5;
+
+    /**
+     * Initialisation du LLM.
+     */
     private static final ChatLanguageModel llm = OllamaChatModel.builder()
-            .baseUrl(System.getenv().getOrDefault("OLLAMA_HOST", "http://localhost:11434"))
+            .baseUrl(System.getenv().getOrDefault(
+                    "OLLAMA_HOST",
+                    "http://localhost:11434"
+            ))
             .modelName("qwen2.5:3b")
-            .timeout(Duration.ofMinutes(5))
+            .timeout(Duration.ofMinutes(LLM_TIMEOUT_MINUTES))
             .build();
 
-    // Service qui contient toute la logique métier
-    private static final NewsService newsService = new NewsService(rssFetcher, llm);
+    /**
+     * Service qui contient toute la logique métier.
+     */
+    private static final NewsService NEWS_SERVICE = new NewsService(
+            rssFetcher,
+            llm
+    );
 
     private PreferencesApi() {
         // Classe utilitaire, pas d'instance
@@ -60,17 +79,23 @@ public final class PreferencesApi {
     public static void handlePreferences(final Context ctx) {
         try {
             // Parse la requête JSON
-            PreferencesRequest req = MAPPER.readValue(ctx.body(), PreferencesRequest.class);
+            PreferencesRequest req = MAPPER.readValue(
+                    ctx.body(),
+                    PreferencesRequest.class
+            );
 
             // Appel du service métier
-            List<News> news = newsService.getNewsForPreferences(req);
+            List<News> news = NEWS_SERVICE.getNewsForPreferences(req);
 
             // Retourne la réponse JSON
             ctx.status(HttpStatus.OK).json(new NewsCollection(news));
 
         } catch (JsonProcessingException e) {
             ctx.status(HttpStatus.BAD_REQUEST)
-                    .json(new ErrorResponse("invalid_json", e.getOriginalMessage()));
+                    .json(new ErrorResponse(
+                            "invalid_json",
+                            e.getOriginalMessage()
+                    ));
 
         } catch (ApiException e) {
             // Erreur métier personnalisée
