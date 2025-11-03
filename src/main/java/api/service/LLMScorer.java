@@ -228,6 +228,8 @@ public final class LLMScorer {
         try {
             String response = llm.generate(prompt);
 
+            LOGGER.info(response);
+
             int startIndex = response.indexOf('{');
             int endIndex = response.lastIndexOf('}');
             if (startIndex == -1 || endIndex == -1 || endIndex <= startIndex) {
