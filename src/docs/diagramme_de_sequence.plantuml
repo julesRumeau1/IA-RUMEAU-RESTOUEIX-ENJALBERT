@@ -1,31 +1,55 @@
 @startuml
-actor Client as C
+title Diagramme de séquence — Récupération des actualités
 
-participant "PreferencesApi" as Api
-participant "PreferencesUtils" as PrefUtils
-participant "LeMondeRSSFetcher" as Rss
-participant "NewsCollection" as NewsCol
-participant "LLM / service de scoring" as LLM
+actor Client
+boundary "PreferencesApi" as API
+control "NewsService" as Service
+control "NewsCollectionFactory" as Factory
+control "LLMScorer" as Scorer
+control "NewsSorter" as Sorter
+entity "RssFetcher(s)" as Fetchers
 
-C -> Api : GET /preferences/news
-activate Api
+== Appel ==
+Client -> API : GET /news?themes=...
+activate API
 
-Api -> PrefUtils : chargerPréférences(client)
-PrefUtils --> Api : PreferencesRequest
+API -> Service : getNewsForThemes(themes)
+activate Service
 
-Api -> Rss : fetchRss()
-activate Rss
-Rss --> Api : liste de News (brutes)
-deactivate Rss
+Service -> Factory : fromSources(fetchers, themes)
+activate Factory
 
-Api -> LLM : scorer(news, préférences)
-activate LLM
-LLM --> Api : liste de NewsCategoryScore
-deactivate LLM
+loop pour chaque source RSS
+  Factory -> Fetchers : fetch()
+  Fetchers --> Factory : List<News>
+end
 
-Api -> NewsCol : new NewsCollection(news + scores)
-Api <- NewsCol : collection
+Factory --> Service : NewsCollection
+deactivate Factory
 
-Api --> C : 200 OK + JSON (news filtrées)
-deactivate Api
+Service -> Scorer : score(collection.items, themes)
+activate Scorer
+Scorer --> Service : List<NewsCategoryScore>
+deactivate Scorer
+
+Service -> Sorter : sort(collection)
+activate Sorter
+Sorter --> Service : NewsCollection (triée)
+deactivate Sorter
+
+Service --> API : NewsCollection
+deactivate Service
+
+API --> Client : 200 OK\nList<NewsDTO>
+deactivate API
+
+== Erreur (alt) ==
+alt source RSS indisponible
+  Fetchers --> Factory : ApiException
+  Factory --> Service : collection partielle
+else échec critique
+  Service --> API : ApiException
+  API --> Client : 5xx ErrorResponse
+end
+
 @enduml
