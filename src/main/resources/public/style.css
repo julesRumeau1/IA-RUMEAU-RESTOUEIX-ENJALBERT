@@ -13,7 +13,7 @@
   --shadow-lg: 0 10px 40px rgba(0,0,0,.45);
   --ring: 0 0 0 1px rgba(255,255,255,.04), 0 0 0 8px rgba(79,156,255,.08);
   --grad: radial-gradient(1200px 600px at 10% -10%, rgba(79,156,255,.10), transparent 50%),
-          radial-gradient(1200px 600px at 90% 110%, rgba(52,211,153,.10), transparent 50%);
+  radial-gradient(1200px 600px at 90% 110%, rgba(52,211,153,.10), transparent 50%);
 }
 
 *{box-sizing:border-box}
@@ -77,8 +77,6 @@ footer .container{padding-top:16px; padding-bottom:24px; color:var(--muted); fon
 .modal-header{padding:18px 18px 6px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.06)}
 .modal-body{padding:16px 18px 22px}
 
-.sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
-
 /* ===== Overlay de chargement ===== */
 .loading{
   position: fixed; inset: 0; z-index: 100;
@@ -119,18 +117,6 @@ footer .container{padding-top:16px; padding-bottom:24px; color:var(--muted); fon
 .news-title{
   margin:0 0 6px; font-weight:700; line-height:1.2;
 }
-.news-meta{
-  display:flex; gap:10px; align-items:center; color:var(--muted); font-size:12px; margin-bottom:6px;
-}
-.badge{
-  font-size:12px; padding:3px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.08);
-  background:#11161d; color:var(--text);
-}
-.tone{ font-weight:600; }
-.tone.positive{ background: rgba(52,211,153,.18); color:#bbf7d0; border-color: rgba(52,211,153,.35); }
-.tone.neutral{ background: rgba(148,163,184,.18); color:#e5e7eb; border-color: rgba(148,163,184,.35); }
-.tone.negative{ background: rgba(239,68,68,.18); color:#fecaca; border-color: rgba(239,68,68,.35); }
-
 .news-summary{
   margin:0; color:var(--text); opacity:.9;
 }

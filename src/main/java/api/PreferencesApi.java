@@ -7,6 +7,7 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import main.Main;
 import model.News;
 import model.NewsCollection;
 import api.service.NewsService;
@@ -20,6 +21,7 @@ import rss.RssFetcher;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Classe utilitaire pour gérer les endpoints de l'API
@@ -34,6 +36,9 @@ public final class PreferencesApi {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .registerModule(new JavaTimeModule());
+
+    private static final Logger LOGGER =
+            Logger.getLogger(Main.class.getName());
 
     /**
      * Initialisation du fetcher.
@@ -108,6 +113,10 @@ public final class PreferencesApi {
                             "server_error",
                             "Erreur interne du serveur"
                     ));
+
+            LOGGER.info(
+                    e.toString()
+            );
         }
     }
 }

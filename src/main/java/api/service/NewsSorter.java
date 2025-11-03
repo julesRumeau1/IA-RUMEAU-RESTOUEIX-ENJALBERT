@@ -32,9 +32,9 @@ final class NewsSorter {
     private static final Map<Integer, Integer> PREFERENCE_WEIGHTS = Map.of(
             1, -5,
             2, -1,
-            3, 1,
-            4, 3,
-            5, 5
+            3, 3,
+            4, 5,
+            5, 10
     );
 
 

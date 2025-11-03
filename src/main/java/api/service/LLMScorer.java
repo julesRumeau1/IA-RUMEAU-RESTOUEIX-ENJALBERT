@@ -77,6 +77,11 @@ public final class LLMScorer {
 
         validateInputs(newsCollection, orderedCategories);
 
+        // === AJOUT DU LOG DES CATÉGORIES ORDONNÉES ===
+        LOGGER.info("--- Catégories ordonnées pour le LLM ---");
+        LOGGER.info(String.join(", ", orderedCategories));
+        // ============================================
+
         List<News> allNews = newsCollection.getNewsCollection();
         List<News> categorizedNewsList = new ArrayList<>();
 
@@ -197,18 +202,33 @@ public final class LLMScorer {
             final String articlesPrompt
     ) {
         String categoryListPrompt = String.join(", ", orderedCategories);
-        return String.format("""
-              Tu es un système d'évaluation d'actualités.
-              TA TÂCHE: Évaluer les articles suivants et retourner une map JSON.
 
-              RÈGLES:
-              1. Scores: 0 (pas lié) à 4 (très lié)
-              2. Ordre des catégories: respecter cet ordre EXACT: %d thèmes: %s
-              3. Format: Réponds UNIQUEMENT avec la map JSON.
+        String promptTemplate = """
+          Tu es un système d'évaluation d'actualités.
+          TA TÂCHE: Évaluer les articles suivants et retourner une map JSON.
 
-              ARTICLES À ÉVALUER (Format "ID": "Titre. Description"):
-              %s
-          """, orderedCategories.size(), categoryListPrompt, articlesPrompt);
+          RÈGLES:
+          1.  Scores: 0 (pas lié), 1 (un peu lié), 2 (lié), 3 (bien lié), 4 (très lié).
+          2.  Ordre des catégories: Tu DOIS respecter cet ordre EXACT de %d
+              thèmes: %s
+          3.  Format: Réponds UNIQUEMENT avec la map JSON. Pas de texte, pas
+              d'explication.
+
+          ARTICLES À ÉVALUER (Format "ID": "Titre. Description"):
+          %s
+
+          FORMAT DE RÉPONSE JSON ATTENDU (Map<String, List<Integer>> avec %d
+                                          scores):
+          {
+            "1": [x, x, x, x, x, x, x, x, x, x, x, x],
+            "2": [x, x, x, x, x, x, x, x, x, x, x, x],
+            "3": [x, x, x, x, x, x, x, x, x, x, x, x],
+          }
+          """;
+
+        return String.format(promptTemplate, orderedCategories.size(),
+                categoryListPrompt,articlesPrompt,
+                orderedCategories.size());
     }
 
     /**
@@ -226,8 +246,16 @@ public final class LLMScorer {
             final String articlesLog
     ) throws ApiException {
         try {
+            // === AJOUT DU LOG ICI ===
+            // Log des articles envoyés au LLM pour ce lot
+            LOGGER.info("--- Envoi du lot au LLM ---");
+            LOGGER.info(articlesLog);
+            // =========================
+
             String response = llm.generate(prompt);
 
+            // J'ajoute aussi un titre ici pour mieux lire la réponse
+            LOGGER.info("--- Réponse LLM reçue ---");
             LOGGER.info(response);
 
             int startIndex = response.indexOf('{');
@@ -242,6 +270,10 @@ public final class LLMScorer {
             return MAPPER.readValue(cleanedResponse, MAP_STRING_LIST_INT_TYPE);
 
         } catch (Exception ex) {
+            // Le log des articles est déjà passé dans le `categorize`
+            // Il serait bon de l'ajouter ici aussi en cas d'erreur
+            LOGGER.warning("Échec de catégorisation. Articles concernés :\n"
+                    + articlesLog);
             throw new ApiException("llm_batch_failed",
                     "Échec de catégorisation par le LLM : " + ex.getMessage());
         }

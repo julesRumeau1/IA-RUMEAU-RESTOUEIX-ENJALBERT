@@ -59,8 +59,6 @@ Vous y verrez la liste des articles triés pour vous. Pour chaque article, l'int
 
 * **Le titre :** Un lien cliquable qui ouvre l'article original sur le site *Le Monde*.
 * **Le résumé :** La description issue du flux RSS.
-* **Les badges :**
-    * **Thème :** Le thème principal détecté par l'IA (ex: `Politique`, `Sport`).
 
 ## 4. Outils additionnels
 
