@@ -1,5 +1,5 @@
 @startuml
-title Diagramme de séquence — Récupération des actualités
+title Diagramme de séquence — Récupération & scoring des actualités
 
 actor Client
 boundary "PreferencesApi" as API
@@ -16,21 +16,25 @@ activate API
 API -> Service : getNewsForThemes(themes)
 activate Service
 
+' --- Récupération en un seul batch ---
 Service -> Factory : fromSources(fetchers, themes)
 activate Factory
-
-loop pour chaque source RSS
-  Factory -> Fetchers : fetch()
-  Fetchers --> Factory : List<News>
-end
-
+Factory -> Fetchers : fetchAll()  ' appel conceptuel : agrège toutes les sources
+Fetchers --> Factory : List<News> (toutes les news)
 Factory --> Service : NewsCollection
 deactivate Factory
 
-Service -> Scorer : score(collection.items, themes)
+' --- Scoring & matching ---
+' Le LLM peut être appelé en batch (une fois) pour toutes les news,
+' mais le "matching" utilisateur (calculateMatchScore) s'applique par news.
+Service -> Scorer : score(collection.items, themes)\n(batched)
 activate Scorer
-Scorer --> Service : List<NewsCategoryScore>
+Scorer --> Service : Map<NewsId, Map<Category,Score>>
 deactivate Scorer
+
+loop pour chaque News de la collection
+  Service -> Service : calculateMatchScore(news, userPreferences)
+end
 
 Service -> Sorter : sort(collection)
 activate Sorter
@@ -44,10 +48,9 @@ API --> Client : 200 OK\nList<NewsDTO>
 deactivate API
 
 == Erreur (alt) ==
-alt source RSS indisponible
-  Fetchers --> Factory : ApiException
+alt échec partiel d'une source RSS
   Factory --> Service : collection partielle
-else échec critique
+else échec critique (LLM ou parsing)
   Service --> API : ApiException
   API --> Client : 5xx ErrorResponse
 end
