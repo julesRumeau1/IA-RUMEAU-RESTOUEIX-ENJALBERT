@@ -38,8 +38,8 @@ services:
     command: >
       '
         set -e
-        echo "Pull qwen2.5:3b..." &&
-        ollama pull qwen2.5:3b &&
+        echo "Pull qwen2.5:7b..." &&
+        ollama pull qwen2.5:7b &&
         echo "Init OK" 
       '
 

@@ -1,7 +1,7 @@
 # 🧠 NewsSummarizer Agent
 
 ## 📌 Objectif du projet
-Concevoir un **agent intelligent** qui récupère des **actualités** via des **flux RSS**, filtre selon les **préférences utilisateur** (politique, sport, tech, etc.), puis **résume** les articles pertinents en s’appuyant sur **Ollama** (modèle **Phi4-mini**) pour l’inférence locale.
+Concevoir un **agent intelligent** qui récupère des **actualités** via des **flux RSS**, filtre selon les **préférences utilisateur** (politique, sport, tech, etc.), puis **résume** les articles pertinents en s’appuyant sur **Ollama** (modèle **qwen2.5:7b**) pour l’inférence locale.
 
 ---
 
@@ -59,7 +59,7 @@ src/
 
 ## 🧰 Technologies utilisées
 - **Langage principal :** Java
-- **Backend IA :** Ollama (`qwen2.5:3b`)
+- **Backend IA :** Ollama (`qwen2.5:7b`)
 - **Parsing RSS :** Rome (ou équivalent)
 - **JSON :** Gson / Jackson
 - **Tests :** JUnit
@@ -105,7 +105,7 @@ sudo docker compose up -d
 ## 💡 Exemple d’appel Ollama
 ```json
 {
-  "model": "qwen2.5:3b",
+  "model": "qwen2.5:7b",
   "prompt": "Résume en 3 phrases les actualités du jour sur le thème 'politique'.",
   "stream": false
 }

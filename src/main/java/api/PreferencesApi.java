@@ -39,7 +39,7 @@ public final class PreferencesApi {
     // Initialisation du LLM
     private static final ChatLanguageModel llm = OllamaChatModel.builder()
             .baseUrl(System.getenv().getOrDefault("OLLAMA_HOST", "http://localhost:11434"))
-            .modelName("qwen2.5:3b")
+            .modelName("qwen2.5:7b")
             .timeout(Duration.ofMinutes(5))
             .build();
 
