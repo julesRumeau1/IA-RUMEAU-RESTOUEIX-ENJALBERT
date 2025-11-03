@@ -4,7 +4,7 @@
 
 Bienvenue ! Cette application est un **agent intelligent** conçu pour vous aider à filtrer et trier les dernières actualités.
 
-Elle récupère les articles depuis les flux RSS du journal *Le Monde* et utilise un modèle d'intelligence artificielle (Ollama `qwen2.5:3b`) pour analyser et catégoriser chaque article.
+Elle récupère les articles depuis les flux RSS du journal *Le Monde* et utilise un modèle d'intelligence artificielle (Ollama `qwen2.5:7b`) pour analyser et catégoriser chaque article.
 
 En fonction des **préférences** que vous définissez (votre intérêt pour la politique, le sport, la tech, etc.), l'agent vous présentera une liste d'articles triés, correspondant parfaitement à ce que vous souhaitez lire.
 
@@ -23,7 +23,7 @@ La première chose a avoir un JDK installé dans une version supérieur a 17 et 
         ```bash
         sudo docker compose up -d
         ```
-4.  **Note importante :** Lors du premier lancement, le service `ollama-init` téléchargera le modèle `qwen2.5:3b`. Cette opération peut prendre plusieurs minutes en fonction de votre connexion.
+4.  **Note importante :** Lors du premier lancement, le service `ollama-init` téléchargera le modèle `qwen2.5:7b`. Cette opération peut prendre plusieurs minutes en fonction de votre connexion.
 5.  Une fois les conteneurs démarrés, l'application est accessible dans votre navigateur à l'adresse : **[http://localhost:8080](http://localhost:8080)**
 
 ## 3. Utiliser l'interface de préférences
@@ -52,7 +52,7 @@ Une fois vos préférences réglées, cliquez sur le bouton principal :
 Un indicateur de chargement apparaîtra. Pendant ce temps, l'agent effectue les actions suivantes en arrière-plan :
 
 1.  Il récupère le dernier flux RSS "À la une" du Monde (`LeMondeRSSFetcher.java`).
-2.  Il envoie les articles au modèle IA `qwen2.5:3b` pour qu'ils soient évalués et catégorisés selon les 12 thèmes (`PreferencesApi.java`).
+2.  Il envoie les articles au modèle IA `qwen2.5:7b` pour qu'ils soient évalués et catégorisés selon les 12 thèmes (`PreferencesApi.java`).
 3.  Il calcule un "score de pertinence" pour chaque article en comparant les catégories trouvées par l'IA avec les poids que vous avez définis.
 4.  Il trie la liste finale et ne conserve que les articles ayant un score positif.
 

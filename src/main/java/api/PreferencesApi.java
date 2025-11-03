@@ -53,7 +53,7 @@ public final class PreferencesApi {
                     "OLLAMA_HOST",
                     "http://localhost:11434"
             ))
-            .modelName("qwen2.5:3b")
+            .modelName("qwen2.5:7b")
             .timeout(Duration.ofMinutes(LLM_TIMEOUT_MINUTES))
             .build();
 

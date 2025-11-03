@@ -12,6 +12,9 @@ import model.News;
 import model.NewsCategoryScore;
 import model.NewsCollection;
 
+
+import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -266,14 +269,17 @@ public final class LLMScorer {
                 continue;
             }
 
-            List<NewsCategoryScore> categoryScores = new ArrayList<>();
-            for (int i = 0; i < orderedCategories.size(); i++) {
-                int score =
-                        Math.max(0, Math.min(scores.get(i), MAX_LLM_SCORE));
-                if (score > 0) {
-                    categoryScores.add(new NewsCategoryScore(
-                            orderedCategories.get(i), score));
-                }
+            try {
+              List<NewsCategoryScore> categoryScores = new ArrayList<>();
+              for (int i = 0; i < orderedCategories.size(); i++) {
+                  int score =
+                          Math.max(0, Math.min(scores.get(i), MAX_LLM_SCORE));
+                  if (score > 0) {
+                      categoryScores.add(new NewsCategoryScore(
+                              orderedCategories.get(i), score));
+                  }
+            } catch (IOException | RuntimeException ex) {
+                throw new ApiException("llm_batch_failed", "Échec de catégorisation par le LLM : " + ex.getMessage());
             }
             news.setCategoryScores(categoryScores);
             categorizedNewsList.add(news);
