@@ -10,13 +10,13 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
     command: ["serve"]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+    #deploy:
+    #  resources:
+    #    reservations:
+    #      devices:
+    #        - driver: nvidia
+    #          count: all
+    #          capabilities: [ gpu ]
     healthcheck:
       test: ["CMD-SHELL", "ollama ps >/dev/null 2>&1 || exit 1"]
       interval: 30s
