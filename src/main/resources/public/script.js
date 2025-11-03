@@ -145,7 +145,7 @@ function hideLoading(){
 }
 
 // ==================== Normalisation des données backend ====================
-// On attend un objet { newsCollection: [{ title, link, description, categoryScores: [{category, score}] }, ...] }
+// On attend un objet { newsCollection: [{ title, link, description }, ...] }
 function normalizeNews(apiData){
   const raw = apiData?.newsCollection ?? [];
   return raw.map(item => {
@@ -153,40 +153,8 @@ function normalizeNews(apiData){
     const link = item.link || '#';
     const summary = item.description || '';
 
-    const themeLabel = pickThemeLabel(item.categoryScores);
-    const tone = pickTone(item.categoryScores); // 'positive' | 'negative' | 'neutral'
-
-    return { title, link, summary, themeLabel, tone };
+    return { title, link, summary };
   });
-}
-
-// Choisit un thème lisible à partir des catégories (on ignore Positif/Négatif/Neutre)
-const NON_THEME_LABELS = new Set(['positif','négatif','negatif','neutre','neutral','positive','negative']);
-function pickThemeLabel(categoryScores){
-  if(!Array.isArray(categoryScores) || !categoryScores.length) return 'Général';
-  // prend la catégorie avec le meilleur score, hors sentiment
-  const filtered = categoryScores
-    .filter(c => !NON_THEME_LABELS.has((c.category || '').toLowerCase()))
-    .sort((a,b) => (b.score||0) - (a.score||0));
-  return (filtered[0]?.category) || (categoryScores[0]?.category) || 'Général';
-}
-
-// Déduit la tonalité à partir des catégories "Positif"/"Négatif"/"Neutre"
-function pickTone(categoryScores){
-  if(!Array.isArray(categoryScores)) return 'neutral';
-  const byName = {};
-  for(const c of categoryScores){
-    byName[(c.category || '').toLowerCase()] = c.score || 0;
-  }
-  const pos = byName['positif'] || byName['positive'] || 0;
-  const neg = byName['négatif'] || byName['negatif'] || byName['negative'] || 0;
-  const neu = byName['neutre']  || byName['neutral']  || 0;
-
-  if(pos > neg && pos > neu) return 'positive';
-  if(neg > pos && neg > neu) return 'negative';
-  if(neu > pos && neu > neg) return 'neutral';
-  // fallback simple : si rien, neutre
-  return 'neutral';
 }
 
 // ==================== Fenêtre de résultats ====================
@@ -233,24 +201,11 @@ function openResults(news, opts = {}) {
       title.textContent = item.title;
     }
 
-    const meta = document.createElement('div');
-    meta.className = 'news-meta';
-
-    const theme = document.createElement('span');
-    theme.className = 'badge';
-    theme.textContent = item.themeLabel ?? 'Général';
-
-    const tone = document.createElement('span');
-    tone.className = 'badge tone ' + (item.tone || 'neutral');
-    tone.textContent = (item.tone ? item.tone.toUpperCase() : 'NEUTRE');
-
-    meta.append(theme, tone);
-
     const summary = document.createElement('p');
     summary.className = 'news-summary';
     summary.textContent = item.summary || '';
 
-    card.append(title, meta, summary);
+    card.append(title, summary);
     list.append(card);
   });
 
@@ -271,12 +226,6 @@ document.getElementById('fetchBtn').addEventListener('click', async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    //if (!res.ok) {
-    //  const errorData = await res.json();
-    //  toast('Erreur : ' + (errorData.message || 'Erreur côté serveur'));
-    //  hideLoading();
-    //  return;
-    //}
 
     const data = await res.json();
     const news = normalizeNews(data);
